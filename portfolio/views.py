@@ -1,7 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
 
 def index(request):
-    return HttpResponse('ポートフォリオ')
+    return render(request,'portfolio.html')
 
-# Create your views here.
