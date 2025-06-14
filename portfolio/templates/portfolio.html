@@ -14,22 +14,38 @@
         img {
             width: 60%;
             height: auto;
-            margin: 20px 0;
+            margin: 10px 0;
+        }
+        .link{
+            font-size: 20px;
+            margin: 10px;
+            color: blue;
+
+        }
+        button{
+            display: inline-block;
+            font-size: 20px;
+            margin: 20px;
+            background-color: blue;
+            color: white;
+            border: none;           
         }
     </style>
 </head>    
 <body>
     <div class="container text-center">
-        <h1>作品No.1 SHIFT PILOT</h1>
+        <h1>作品No.1 Shift Pilot</h1>
         <img src="{% static 'SHIFT_PILOT.jpg' %}" alt="SHIFT PILOTのスクリーンショット">
         <p>ShiftPilotは、公平で効率的なシフト作成を実現するアプリです。</p>
         <p>希望休や勤務条件をもとに、自動で勤務表を作成します。</p>
         <p>従業員ごとの担当回数を見える化し、偏りのないシフトを実現します。</p>
         <p>作成者と従業員の双方にとって、最適なシフト環境を提供します。</p>
 
-        <a href="/media/portfolio/SHIFT_PILOT_企画書.pdf" class="link">企画書</a>
-        <a href="/media/portfolio/SHIFT_PILOT_画面遷移図.svg">画面遷移図</a>
-        <a href="/media/portfolio/SHIFT_PILOT_ER図.svg">ER図</a>
+        {% load static %}
+        <a href="{% static 'Shift_Pilot_企画書.pdf' %}" class="link">企画書</a>
+        <a href="{% static 'Shift_Pilot_画面遷移図.svg'%}" class="link">画面遷移図</a>
+        <a href="{% static 'Shift_Pilot_ER図.svg'%}" class="link">ER図</a>
+        <br><button onclick="location.href='/'">このアプリにアクセス</button><br>
     </div>
 </body>
 </html>
