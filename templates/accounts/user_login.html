@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 d-flex justify-content-center">
+    <div style="width: 100%; max-width: 500px;">
+        <form method="POST">
+            {% csrf_token %}
+            {{ login_form.as_p }}
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary w-50">ログイン</button>
+            </div>
+        </form>
+        <div class="text-center mt-3">
+            <a href="{% url 'accounts:signup' %}">アカウント登録</a>
+        </div>
+    </div> 
+</div>
+{% endblock  %}
+
