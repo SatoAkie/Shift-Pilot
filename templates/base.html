@@ -9,14 +9,14 @@
     <body>
         <header class="p-3">
             <span class="fw-bold" style="font-size: 1.5rem;">Shift Pilot</span>
-         </header>
+        </header>
 
         {% if not hide_navbar %}
         <nav class="navbar navbar-expand-lg navbar-light bg-light px-3">
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">ホーム</a>
+                        <a class="nav-link" href="{% url 'shifts:home' %}">ホーム</a>
                     </li>
 
                     {% if user.is_authenticated and user.is_staff%}
@@ -47,3 +47,7 @@
             </div>
         </nav>
         {% endif %}
+        {% block content %}
+        {% endblock  %}
+    </body>
+</html>

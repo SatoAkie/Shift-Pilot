@@ -5,4 +5,5 @@ urlpatterns = [
     path('shift_pilot/admin/', admin.site.urls),
     path('',include('portfolio.urls')),
     path('shift_pilot/accounts/', include('accounts.urls')),
+    path('shift_pilot/shifts/', include('shifts.urls')),
 ]
