@@ -17,11 +17,30 @@ class UserManager(BaseUserManager):
             extra_fields.setdefault('is_active', True)
             return self.create_user(email, password, **extra_fields)
         
+class Role(models.Model):
+    role_name = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.role_name
+
+class Team(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Team{self.id}"
+        
 class User(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=128)
+    name = models.CharField(max_length=128)
     email =  models.EmailField(max_length=128, unique=True)
+    password = models.CharField(max_length=128)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -29,8 +48,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['name']
 
     class Meta: 
         db_table = 'user'
+
+
     

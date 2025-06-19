@@ -12,9 +12,9 @@ class SignupForm(forms.ModelForm):
     )
     class Meta:
         model = User
-        fields = ('username', 'email', 'password')
+        fields = ('name', 'email', 'password')
         labels = {
-            'username': '名前',
+            'name': '名前',
             'email': 'メールアドレス',
             'password': 'パスワード',
         }
