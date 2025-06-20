@@ -2,6 +2,10 @@ from django.shortcuts import render, redirect
 from .import forms
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 def signup(request):
     signup_form = forms.SignupForm(request.POST or None)
@@ -9,7 +13,7 @@ def signup(request):
         user = signup_form.save(commit=False)
         user.set_password(signup_form.cleaned_data['password'])
         user.save()
-        return redirect('accounts:home')
+        return redirect('shifts:home')
     return render(
         request, 'accounts/signup.html',context= {
             'signup_form': signup_form,
@@ -25,7 +29,7 @@ def user_login(request):
         user = authenticate(request, username=email, password=password)
         if user:
             login(request, user)
-            return redirect('accounts:home')#()内は仮、ホーム画面作ってない
+            return redirect('shifts:home')#()内は仮、ホーム画面作ってない
         else:
             return redirect('accounts:login')
     return render(
@@ -39,3 +43,13 @@ def user_login(request):
 def user_logout(request):
     logout(request)
     return redirect('accounts:login') 
+
+@login_required
+def user_manage_view(request):
+    if not request.user.role or request.user.role.role_name != '管理者':
+        return HttpResponseForbidden("このページにはアクセスできません")
+    team_users = User.objects.filter(team=request.user.team)
+    context = {
+        'team_users': team_users
+    }
+    return render(request, 'accounts/user_manage.html', context)
