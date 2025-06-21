@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect ,get_object_or_404
 from .import forms
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -29,7 +29,7 @@ def user_login(request):
         user = authenticate(request, username=email, password=password)
         if user:
             login(request, user)
-            return redirect('shifts:home')#()内は仮、ホーム画面作ってない
+            return redirect('shifts:home')
         else:
             return redirect('accounts:login')
     return render(
@@ -53,3 +53,12 @@ def user_manage_view(request):
         'team_users': team_users
     }
     return render(request, 'accounts/user_manage.html', context)
+
+def user_delete_view(request,user_id):
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        user.delete()
+        return redirect('accounts:user_manage')
+    else:
+        return HttpResponseForbidden("不正なアクセスです")
+    

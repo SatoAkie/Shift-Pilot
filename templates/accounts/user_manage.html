@@ -20,7 +20,10 @@
                     <td>{{user.email}}</td>
                     <td>{{user.role.role_name}}</td>
                     <td>
-                        <button class="btn btn-sm btn-danger" disabled>削除</button>
+                        <form method="POST" action="{% url 'accounts:user_delete' user.id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-danger">削除</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
