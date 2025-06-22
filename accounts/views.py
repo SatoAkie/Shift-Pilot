@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect ,get_object_or_404
 from .import forms
+from .models import Role
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth import get_user_model
+
 
 User = get_user_model()
 
@@ -49,11 +51,14 @@ def user_manage_view(request):
     if not request.user.role or request.user.role.role_name != '管理者':
         return HttpResponseForbidden("このページにはアクセスできません")
     team_users = User.objects.filter(team=request.user.team)
+    roles = Role.objects.all()
     context = {
-        'team_users': team_users
+        'team_users': team_users,
+        'roles': roles,
     }
     return render(request, 'accounts/user_manage.html', context)
 
+@login_required
 def user_delete_view(request,user_id):
     if request.method == 'POST':
         user = get_object_or_404(User, id=user_id)
@@ -62,3 +67,14 @@ def user_delete_view(request,user_id):
     else:
         return HttpResponseForbidden("不正なアクセスです")
     
+@login_required
+def user_role_update_view(request,user_id):
+    if request.method == 'POST':
+        role_id = request.POST.get('role_id')
+        user = get_object_or_404(User, id=user_id)
+        role = get_object_or_404(Role, id=role_id)
+        user.role = role
+        user.save()
+        return redirect('accounts:user_manage')
+    else:
+        return HttpResponseForbidden("不正なアクセスです")

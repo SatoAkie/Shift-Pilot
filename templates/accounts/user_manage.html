@@ -18,7 +18,18 @@
                 <tr>
                     <td>{{user.name}}</td>
                     <td>{{user.email}}</td>
-                    <td>{{user.role.role_name}}</td>
+                    <td>
+                     <form method="POST" action="{% url 'accounts:role_update' user.id %}">
+                            {% csrf_token %}
+                            <select name="role_id" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                                {% for role in roles  %}
+                                    <option value="{{ role.id }}" {% if user.role.id == role.id %}selected{% endif %}>
+                                    {{ role.role_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </td>
                     <td>
                         <form method="POST" action="{% url 'accounts:user_delete' user.id %}">
                             {% csrf_token %}
