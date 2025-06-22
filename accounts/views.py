@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth import get_user_model
-
+import uuid
 
 User = get_user_model()
 
@@ -78,3 +78,11 @@ def user_role_update_view(request,user_id):
         return redirect('accounts:user_manage')
     else:
         return HttpResponseForbidden("不正なアクセスです")
+    
+@login_required
+def user_invite(request):
+    if request.method == 'POST':
+        invite_url = request.build_absolute_uri('accounts/signup/?token=csrftoken')
+    else:
+        invite_url = None
+    return render(request, 'accounts/invite.html', context={'invite_url': invite_url})
