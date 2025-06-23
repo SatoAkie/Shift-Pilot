@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import(
     AbstractBaseUser, PermissionsMixin,BaseUserManager
 )
+from django.conf import settings
+import uuid
 
 class UserManager(BaseUserManager):
         def create_user(self, email, password, **extra_fields):
@@ -53,5 +55,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta: 
         db_table = 'user'
 
-
+class Invitation(models.Model):
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    team = models.ForeignKey('Team', on_delete=models.CASCADE)
     
+    created_at = models.DateTimeField(auto_now_add=True)    
+    updated_at = models.DateTimeField(auto_now=True)
+
+    is_used = models.BooleanField(default=False)
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_invitations'
+    )
