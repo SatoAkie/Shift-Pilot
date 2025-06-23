@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'portfolio',
     'accounts',
     'shifts',
+    'common',
 ]
 
 MIDDLEWARE = [

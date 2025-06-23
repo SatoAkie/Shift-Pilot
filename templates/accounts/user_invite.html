@@ -1,22 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-5 d-flex justify-content-center">
-    <div style="width: 100%; max-width: 500px;">
-        <h2 class="text-center mb-4">ユーザー招待</h2>
-        <div>
-            <form method="POST">
+<div class="container mt-5">
+    <h5 class="text-secondary ms-1 mb-4">ユーザー招待</h5>
+
+    <div class="d-flex justify-content-center">
+        <div style="width: 100%; max-width: 500px;">
+            <form method="POST" class="text-center mt-3">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-primary">ユーザー招待URLを作成する</button>
+                <button type="submit" class="btn btn-secondary text-dark btn-lg px-5">ユーザー招待URLを作成する</button>
             </form>
-        </div>
-        {% if invite_url %}
-            <input type="text" class="form-control text-center my-3" value="{{ invite_url }}" readonly>
-        {% endif %}
-        <p> ※このリンクを招待したいユーザーに送ってください</p>
-        <p>※リンクは1度利用されると無効になります</p>
-        <div class="text-center mt-3">
-            <a href="{% url 'accounts:user_manage' %}">ユーザー管理画面へ戻る</a>
+
+            {% if invite_url %}
+                <input type="text" class="form-control text-center my-3" value="{{ invite_url }}" readonly>
+            {% endif %}
+
+            <p class="text-center">※このリンクを招待したいユーザーに送ってください</p>
+            <p class="text-center">※リンクは1度利用されると無効になります</p>
+
+            <div class="text-center mt-3">
+                <a href="{% url 'accounts:user_manage' %}">ユーザー管理画面へ戻る</a>
+            </div>
         </div>
     </div>
 </div>
-{% endblock  %}
+{% endblock %}

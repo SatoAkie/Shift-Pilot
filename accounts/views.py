@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth import get_user_model
 import uuid
-
+from django.urls import reverse
 
 User = get_user_model()
 
@@ -85,14 +85,14 @@ def user_invite(request):
     if request.method == 'POST':
         invitation = Invitation.objects.create(
             team=request.user.team,
-            invited_by=request.user
+            invited_by=request.user,
         )
         invite_url = request.build_absolute_uri(
-            f'/accounts/invite/register/?token={invitation.token}'
+            reverse('accounts:invite_register') + f'?token={invitation.token}'
         )
     else:
         invite_url = None
-    return render(request, 'accounts/invite.html', context={'invite_url': invite_url})
+    return render(request, 'accounts/user_invite.html', context={'invite_url': invite_url})
 
 def invite_register_view(request):
     token_str =  request.GET.get('token')
