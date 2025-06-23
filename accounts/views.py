@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect ,get_object_or_404
 from .import forms
-from .models import Role
+from .models import Role, Invitation
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth import get_user_model
 import uuid
+
 
 User = get_user_model()
 
@@ -82,7 +83,37 @@ def user_role_update_view(request,user_id):
 @login_required
 def user_invite(request):
     if request.method == 'POST':
-        invite_url = request.build_absolute_uri('accounts/signup/?token=csrftoken')
+        invitation = Invitation.objects.create(
+            team=request.user.team,
+            invited_by=request.user
+        )
+        invite_url = request.build_absolute_uri(
+            f'/accounts/invite/register/?token={invitation.token}'
+        )
     else:
         invite_url = None
     return render(request, 'accounts/invite.html', context={'invite_url': invite_url})
+
+def invite_register_view(request):
+    token_str =  request.GET.get('token')
+    invitation = get_object_or_404(Invitation, token=token_str)
+
+    if invitation.is_used:
+        return HttpResponseForbidden("この招待リンクはすでに使用されています")
+    
+    form = forms.SignupForm(request.POST or None)
+    if form.is_valid():
+        user = form.save(commit=False)
+        user.team = invitation.team
+        user.is_active = True
+        user.save()
+        invitation.is_used = True
+        invitation.save()
+        login(request, user)
+        return redirect('shifts:home')
+    return render(request, 'accounts/signup.html', {
+        'signup_form': form,
+        'hide_navbar': True
+        })
+        
+
