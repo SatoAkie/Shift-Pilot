@@ -117,5 +117,11 @@ def invite_register_view(request):
         'signup_form': form,
         'hide_navbar': True
         })
+
+@login_required
+def mypage(request):
+    return render(
+        request, 'accounts/mypage.html', { 'user': request.user}
+    )
         
 

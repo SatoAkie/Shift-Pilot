@@ -40,6 +40,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     password = models.CharField(max_length=128)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    profile_image = models.ImageField(upload_to='profile_images', null=True, blank=True)
 
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)

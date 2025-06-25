@@ -26,7 +26,7 @@
                         </a>
                         <ul class="dropdown-menu"> 
                             {#<li><a class="dropdown-item" href="{% url 'shifts' %}">シフト作成</a></li>#}
-                            {#<li><a class="dropdown-item" href="{% url 'user_manage' %}">ユーザー管理</a></li>#}
+                            <li><a class="dropdown-item" href="{% url 'accounts:user_manage' %}">ユーザー管理</a></li>
                         </ul>
                     </li>
                     {% endif %} 
@@ -36,7 +36,7 @@
                     </li>
 
                     <li class="nav-item">
-                        {#<a class="nav-link" href="{% url 'mypage' %}">マイページ</a>#}
+                        <a class="nav-link" href="{% url 'accounts:mypage' %}">マイページ</a>
                     </li>
 
                     <li class="nav-item">
