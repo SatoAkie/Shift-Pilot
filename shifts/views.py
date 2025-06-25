@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import calendar
 from .models import  ShiftRequest
 
@@ -12,21 +12,42 @@ def home(request):
 
 @login_required
 def shift_request_view(request):
-    today = date.today()
-    year = int(request.GET.get('year', today.year))
-    month = int(request.GET.get('month',today.month))
+    today = date.today() 
+    month_param = request.GET.get('month')
+    if month_param:
+        current_date = datetime.strptime(month_param, "%Y-%m").date()
+    else:
+        current_date = today
+        
+    year = current_date.year
+    month = current_date.month
 
     first_day = date(year, month, 1)
     last_day = date(year, month, calendar.monthrange(year, month)[1])
     calendar_days = [first_day + timedelta(days=i) for i in range ((last_day - first_day).days + 1)]
 
     existing_requests = ShiftRequest.objects.filter(user=request.user, date__range=(first_day,last_day))
+    existing_dates = set(existing_requests.values_list('date', flat=True))
+
+    current_month = date(year, month, 1)
+    prev_month = (current_month.replace(day=1) - timedelta(days=1)).replace(day=1)
+    next_month = (current_month.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+    prev_month_str = prev_month.strftime("%Y-%m")
+    next_month_str = next_month.strftime("%Y-%m")
 
     if request.method == "POST":
         selected_dates = request.POST.getlist("selected_dates")
         ShiftRequest.objects.filter(user=request.user, date__range=(first_day, last_day)).delete()
+        
         for date_str in selected_dates:
-            ShiftRequest.objects.create(user=request.user, date=date.fromisoformat(date_str))
+            comment_key = f"comment_{date_str}"
+            comment = request.POST.get(comment_key,"")
+            ShiftRequest.objects.create(
+                user=request.user, 
+                date=date.fromisoformat(date_str),
+                comment=comment
+            )
         return redirect('shift_request_view')
 
     return render(
@@ -35,5 +56,10 @@ def shift_request_view(request):
             'month': month,
             'calendar_days': calendar_days,
             'existing_requests': existing_requests,
+            'existing_dates': existing_dates,
+            'current_month' : current_month,
+            'prev_month_str' : prev_month_str,
+            'next_month_str' : next_month_str
+        
         }
     )
