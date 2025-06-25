@@ -15,6 +15,7 @@ def signup(request):
     if signup_form.is_valid():
         user = signup_form.save(commit=False)
         user.set_password(signup_form.cleaned_data['password'])
+        user.is_active = True 
         user.save()
         return redirect('shifts:home')
     return render(
@@ -104,6 +105,7 @@ def invite_register_view(request):
     form = forms.SignupForm(request.POST or None)
     if form.is_valid():
         user = form.save(commit=False)
+        user.set_password(form.cleaned_data['password'])
         user.team = invitation.team
         user.is_active = True
         user.save()

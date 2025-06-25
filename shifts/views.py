@@ -38,17 +38,26 @@ def shift_request_view(request):
 
     if request.method == "POST":
         selected_dates = request.POST.getlist("selected_dates")
-        ShiftRequest.objects.filter(user=request.user, date__range=(first_day, last_day)).delete()
         
-        for date_str in selected_dates:
+        for date_str in [d.strftime('%Y-%m-%d') for d in calendar_days]:
+            day = date.fromisoformat(date_str)
             comment_key = f"comment_{date_str}"
-            comment = request.POST.get(comment_key,"")
-            ShiftRequest.objects.create(
+            comment = request.POST.get(comment_key,"").strip()
+            is_day_off = date_str in selected_dates
+
+            if not is_day_off and not comment:
+                ShiftRequest.objects.filter(user=request.user, date=day).delete()
+                continue
+
+            ShiftRequest.objects.update_or_create(
                 user=request.user, 
-                date=date.fromisoformat(date_str),
-                comment=comment
+                date=day,
+                defaults={
+                    'is_day_off':is_day_off,
+                    'comment':comment
+                }
             )
-        return redirect('shift_request_view')
+        return redirect('shifts:shift_request')
 
     return render(
         request, 'shifts/shift_request.html',context= {

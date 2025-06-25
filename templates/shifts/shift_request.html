@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load range_tags extras %}
 
 {% block content %}
 <div class="container mt-5">
@@ -26,19 +25,22 @@
                             </tr><tr>
                         {% endif %}
                          <td onclick="toggleRequest(this)">
-                            {{ day.day }}
-                            <input type="checkbox" name="selected_dates" value="{{ day }}"
-                                id="checkbox-{{ day }}" {% if day in existing_dates %}checked{% endif %}
-                                style="display: none;">
-                            <span id="mark-{{ day }}">
+                            <div class="d-flex flex-column align-item-center" >
+                                <div>{{ day.day }}</div>
+                                <input type="checkbox" name="selected_dates" value="{{ day|date:'Y-m-d' }}"
+                                    id="checkbox-{{ day }}" {% if day in existing_dates %}checked{% endif %}
+                                    style="display: none;">
+ 
+                                <span id="mark-{{ day }}" class="text-success fs-4">
                                 {% if day in existing_dates %}○{% endif %}
-                            </span>
-                            <br>
-                            <button type="button" class="btn btn-sm btn-outline-secondary mt-1"
-                                onclick="openCommentModal('{{ day }}')">
-                                ✎
-                            </button> 
-                            <input type="hidden" name="comment_{{ day }}" id="comment-hidden-{{ day }}" value="">     
+                                </span>
+                            
+                                <button type="button" class="btn btn-sm border-0 mt-1"
+                                    onclick="event.stopPropagation(); openCommentModal('{{ day }}')">
+                                    ✎
+                                </button> 
+                                <input type="hidden" name="comment_{{ day|date:'Y-m-d' }}" id="comment-hidden-{{ day }}" value="">
+                            </div>    
                         </td>
                     {% endfor %}
                 </tr>
@@ -78,7 +80,7 @@
         checkbox.checked = !checkbox.checked;
         mark.textContent = checkbox.checked ? '○' : '';
     }
-    
+
     function openCommentModal(day){
         currentTargetDay = day;
         const hidden = document.getElementById("comment-hidden-"+day);
