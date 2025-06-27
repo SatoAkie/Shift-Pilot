@@ -5,6 +5,11 @@ from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
+class ProfileImageForm(forms.ModelForm):
+    class Meta:
+        model  = User
+        fields = ['profile_image']
+
 class SignupForm(forms.ModelForm):
 
     confirm_password = forms.CharField(

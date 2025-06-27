@@ -120,8 +120,16 @@ def invite_register_view(request):
 
 @login_required
 def mypage(request):
+    if request.method == 'POST':
+        form = forms.ProfileImageForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+    else:
+        form = forms.ProfileImageForm(instance=request.user)
     return render(
-        request, 'accounts/mypage.html', { 'user': request.user}
-    )
+        request, 'accounts/mypage.html', {
+            'user': request.user,
+            'form' : form,
+    })
         
 
