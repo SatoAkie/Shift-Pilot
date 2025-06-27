@@ -14,4 +14,16 @@ class ShiftRequest(models.Model):
 
     def __str__(self):
         return f"{self.user} requests off on {self.date}"
+    
+
+class ShiftPattern(models.Model):
+    pattern_name = models.CharField(max_length=128)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    max_people = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.pattern_name}（{self.start_time}〜{self.end_time}）"
 

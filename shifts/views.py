@@ -2,7 +2,8 @@ from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
 from datetime import date, timedelta, datetime
 import calendar
-from .models import  ShiftRequest
+from .models import ShiftRequest, ShiftPattern
+from .import forms
 
 @login_required
 def home(request):
@@ -72,3 +73,17 @@ def shift_request_view(request):
         
         }
     )
+
+@login_required
+def shift_pattern_view(request):
+    form = forms.ShiftPatternForm(request.POST or None)
+    patterns = ShiftPattern.objects.all()
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('shifts:shift_pattern')
+    
+    return render(request,'shifts/shiftpattern.html',{
+        'form': form,
+        'patterns': patterns,
+    })

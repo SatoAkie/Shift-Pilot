@@ -1,7 +1,9 @@
 from django.contrib import admin
-from .models import ShiftRequest
+from .models import ShiftRequest, ShiftPattern
 
 @admin.register(ShiftRequest)
 class ShiftRequestAdmin(admin.ModelAdmin):
     list_display = ('user', 'date', 'comment')
     list_filter = ('date', 'user')
+
+admin.site.register(ShiftPattern)
