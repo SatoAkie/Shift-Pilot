@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h5 class="text-secondary ms-1 mb-4">シフトパターン登録</h5>
+    <form method="POST">
+        {% csrf_token %}
+        <table class="table table-borderless text-center align-middle" id="pattern-table">
+            <tbody id="pattern-table-body">
+                {% for pattern in patterns %}
+                <tr>
+                    <td style="width: 10%;">
+                        <input type="text" name="pattern_name_{{ forloop.counter }}" value="{{ pattern.pattern_name }}" class="form-control text-center">
+                    </td>
+                    <td style="width: 30%;">
+                        <div class="d-flex justify-content-center align-items-center gap-1">
+                            <input type="time" name="start_time_{{ forloop.counter }}" value="{{ pattern.start_time|time:'H:i' }}" class="form-control" style="width: 6rem;">
+                            ~
+                            <input type="time" name="end_time_{{ forloop.counter }}" value="{{ pattern.end_time|time:'H:i' }}" class="form-control" style="width: 6rem;">
+                        </div>
+                    </td>
+                    <td style="width: 10%;">
+                        <input type="number" name="max_people_{{ forloop.counter }}" value="{{ pattern.max_people }}" class="form-control text-center" min="1">
+                        <input type="hidden" name="id_{{ forloop.counter }}" value="{{ pattern.id }}">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <input type="hidden" id="total-input" name="total" value="{{ patterns|length }}">
+
+        <div class="text-center mb-4">
+            <button type="button" id="add-row-btn" class="btn btn-outline-secondary">シフトパターンを追加</button>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary px-5">登録</button>
+        </div>
+    </form>
+</div>
+
+<script>
+let rowCount = {{ patterns|length }};
+
+document.getElementById('add-row-btn').addEventListener('click', function () {
+    rowCount++;
+    const tbody = document.getElementById('pattern-table-body');
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td style="width: 10%;">
+            <input type="text" name="pattern_name_${rowCount}" value="新パターン" class="form-control text-center">
+        </td>
+        <td style="width: 30%;">
+            <div class="d-flex justify-content-center align-items-center gap-1">
+                <input type="time" name="start_time_${rowCount}" value="00:00" class="form-control" style="width: 6rem;">
+                ~
+                <input type="time" name="end_time_${rowCount}" value="00:00" class="form-control" style="width: 6rem;">
+            </div>
+        </td>
+        <td style="width: 10%;">
+            <input type="number" name="max_people_${rowCount}" value="1" class="form-control text-center" min="1">
+        </td>
+    `;
+    tbody.appendChild(row);
+
+    document.getElementById('total-input').value = rowCount;
+});
+</script>
+{% endblock %}
