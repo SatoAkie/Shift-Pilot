@@ -1,9 +1,12 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from datetime import date, timedelta, datetime
-import calendar
+import calendar, json
 from .models import ShiftRequest, ShiftPattern
 from .import forms
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
 
 @login_required
 def home(request):
@@ -76,14 +79,38 @@ def shift_request_view(request):
 
 @login_required
 def shift_pattern_view(request):
-    form = forms.ShiftPatternForm(request.POST or None)
-    patterns = ShiftPattern.objects.all()
+    if request.method == 'POST':
+        total = int(request.POST.get('total', 0))
+       
+        for i in range(1, total + 1):
+            pattern_id = request.POST.get( f'id_{i}')
+            pattern_data = {
+                'pattern_name': request.POST.get(f'pattern_name_{i}', f'パターン{i}'),
+                'start_time': request.POST.get(f'start_time_{i}', '00:00'),
+                'end_time': request.POST.get(f'end_time_{i}', '00:00'),
+                'max_people': request.POST.get(f'max_people_{i}',1)
+            }
+        
+            if pattern_id:
+                pattern = get_object_or_404(ShiftPattern, pk=pattern_id)
+                for key,value in pattern_data.items():
+                    setattr(pattern, key, value)
+                pattern.save()
+            else:
+                ShiftPattern.objects.create(**pattern_data)
+        return redirect('shifts:shift_pattern')       
 
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        return redirect('shifts:shift_pattern')
-    
+    if ShiftPattern.objects.count() == 0:
+        for char in ['A', 'B', 'C', 'D']:
+            ShiftPattern.objects.create(
+                pattern_name=char,
+                start_time='00:00',
+                end_time='00:00',
+                max_people=1
+            )
+    patterns = ShiftPattern.objects.all()    
     return render(request,'shifts/shiftpattern.html',{
-        'form': form,
         'patterns': patterns,
     })
+
+
