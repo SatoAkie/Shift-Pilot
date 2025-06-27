@@ -3,6 +3,37 @@
 {% block content %}
 <div class="container mt-5">
     <h5 class="text-secondary ms-1 mb-4">マイページ</h5>
-    <div class="d-flex justify-content-center">
-        <div style="width: 100%; max-width: 500px; padding: 30px; border-radius: 10px;">
+    <div class="row align-items-center">
+        <div class = 'col-md-4 text-center'>
+            <div class="mb-2">
+                {% if user.profile_image %}
+                    <img src = "{{ user.profile_image.url }}" class="rounded-circle mb-3" width="140" height="140" alt="プロフィール画像">
+                {% else %}
+                    <img src = "https://via.placeholder.com/140" class="rounded-circle mb-3" width="140" height="140" alt="デフォルト画像">
+                {% endif %}
+            </div>
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <label for="id_profile_image" class="form-label text-muted" style="cursor:pointer;">
+                    +画像を登録
+                </label>
+                {{ form.profile_image|add_class:"form-control d-none"}}
+            </form>
+        </div>
+            
+        <div class="col-md-8">
+            <h5>アカウント情報</h5>
+            <p><strong>ユーザー名：</strong>{{ user.name }}</p>
+            <p><strong>メールアドレス：</strong>{{ user.email }}</p>
+            <p>
+                <strong>パスワード：</strong>
+                {#<a href="{% url 'accounts:password_change' %}">パスワード変更</a>#}
+            </p>
+            <p>
+                {#<a href="{% url 'accounts:_change' %}">アカウント情報変更</a>#}
+            </p>
+        </div>
+    </div>
+</div>
 {% endblock %}

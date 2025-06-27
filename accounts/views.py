@@ -118,12 +118,17 @@ def invite_register_view(request):
         'hide_navbar': True
         })
 
-@login_required
+@login_required#デバッグ用の記述あり、あとで削除
 def mypage(request):
     if request.method == 'POST':
+        print("POSTされたFILES:", request.FILES)
         form = forms.ProfileImageForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
+            print("画像フォームバリデーション成功")
             form.save()
+            return redirect('accounts:mypage')
+        else:
+            print("フォームエラー:", form.errors)
     else:
         form = forms.ProfileImageForm(instance=request.user)
     return render(
