@@ -115,8 +115,14 @@ def shift_pattern_view(request):
 @login_required
 def pattern_assignment_summary_view(request):
     today = date.today()
-    year = int(request.GET.get('year', today.year))
-    month = int(request.GET.get('month', today.month))
+    month_param = request.GET.get('month')
+    if month_param:
+        current_date = datetime.strptime(month_param, "%Y-%m").date()
+    else:
+        current_date = today
+
+    year = current_date.year
+    month = current_date.month
     summaries = PatternAssignmentSummary.objects.filter(summary_year=year, summary_month=month)
     users = User.objects.all()
     patterns = ShiftPattern.objects.all()
@@ -156,13 +162,13 @@ def pattern_assignment_summary_view(request):
     prev_month = (current_month.replace(day=1) - timedelta(days=1)).replace(day=1)
     next_month = (current_month.replace(day=28) + timedelta(days=4)).replace(day=1)
 
-    prev_month_str = f'{prev_month.year}-{prev_month.month}'
-    next_month_str = f'{next_month.year}-{next_month.month}'
+    prev_month_str = prev_month.strftime("%Y-%m")
+    next_month_str = next_month.strftime("%Y-%m")
                            
-
     return render(request,'shifts/pattern_assignment_summary.html',{
         'year': year,
         'month': month,
+        'current_month': current_month, 
         'users': users,
         'patterns': patterns,
         'summary_dict': summary_dict,
