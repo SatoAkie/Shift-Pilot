@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <h5 class="text-secondary ms-1 mb-4">シフト作成</h5>
+
+  <div class="row">
+    <div class="col-md-3 mb-4">
+      <div class="list-group">
+        <a href="{% url 'shifts:shift_pattern' %}" class="list-group-item list-group-item-action">
+          シフトパターン登録
+        </a>
+        <a href="{% url 'shifts:pattern_assignment_summaries' %}" class="list-group-item list-group-item-action">
+          シフトのバランスチェック
+        </a>
+      </div>
+    </div>
+
+    <div class="col-md-9">
+      <div class="d-flex justify-content-center align-items-center mb-3">
+        <a href="?month={{ prev_month_str }}" class="btn btn-sm btn-outline-secondary me-3">&laquo;</a>
+        <h3 class="m-0">{{ current_month.year }}年{{ current_month.month }}月</h3>
+        <a href="?month={{ next_month_str }}" class="btn btn-sm btn-outline-secondary ms-3">&raquo;</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered text-center align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>名前</th>
+              {% for day in calendar_days %}
+                <th>{{ day.day }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+              <tr>
+                <td>{{ user.name }}</td>
+                {% for day in calendar_days %}
+                  {% with code=shift_dict|get_item:user.id|get_item:day.day %}
+                  <td>
+                    {% with comment=comment_dict|get_item:user.id|get_item:day.day %}
+                      {% if comment %}
+                        <span role="button"
+                              class="text-danger"
+                              data-bs-toggle="modal"
+                              data-bs-target="#commentModal"
+                              data-user="{{ user.name }}"
+                              data-date="{{ day|date:'Y-m-d' }}"
+                              data-comment="{{ comment }}">
+                          🔔
+                        </span><br>
+                      {% endif %}
+                    {% endwith %}
+                    <select class="form-select form-select-sm"
+                            data-user-id="{{ user.id }}"
+                            data-shift-id="{{ shift_id_dict|get_item:user.id|get_item:day.day }}">
+                      {% for pattern in patterns %}
+                        <option value="{{ pattern.id }}" {% if code == pattern.pattern_name %}selected{% endif %}>
+                          {{ pattern.pattern_name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  {% endwith %}
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-5">
+        <table class="table table-bordered w-50">
+          <tbody>
+            {% for pattern in patterns %}
+              <tr>
+                <td>{{ pattern.pattern_name }}</td>
+                <td>{{ pattern.start_time|time:"H:i" }} ～ {{ pattern.end_time|time:"H:i" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-4">
+        <form method="POST" action="{% url 'shifts:auto_assign_shifts' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary">
+            シフト自動作成
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="commentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-body">
+        <p id="modal-comment" class="mt-2"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selects = document.querySelectorAll('select[data-user-id][data-shift-id]');
+    selects.forEach(select => {
+      select.addEventListener('change', function () {
+        const userId = this.dataset.userId;
+        const shiftId = this.dataset.shiftId;
+        const patternId = this.value;
+
+        fetch("{% url 'shifts:update_user_shift' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: new URLSearchParams({
+            user_id: userId,
+            shift_id: shiftId,
+            pattern_id: patternId
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (!data.success) {
+            alert('保存に失敗しました：' + (data.error || '不明なエラー'));
+          }
+        })
+        .catch(error => {
+          alert('通信エラーが発生しました');
+          console.error(error);
+        });
+      });
+    });
+
+    const modal = document.getElementById('commentModal');
+    modal.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      const user = trigger.getAttribute('data-user');
+      const date = trigger.getAttribute('data-date');
+      const comment = trigger.getAttribute('data-comment');
+
+      document.getElementById('modal-comment').textContent = comment;
+    });
+  });
+</script>
+{% endblock %}

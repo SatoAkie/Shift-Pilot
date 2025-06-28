@@ -35,15 +35,16 @@
     
     <div class="mt-5">
   
-    <table class="table table-bordered w-50">
-        <tbody>
-        {% for pattern in patterns %}
-            <tr>
-            <td>{{ pattern.pattern_name }}</td>
-            <td>{{ pattern.start_time|time:"H:i" }} ～ {{ pattern.end_time|time:"H:i" }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    </div>
+   <div class="mt-5">
+        <table class="table table-bordered w-50">
+          <tbody>
+            {% for pattern in patterns %}
+              <tr>
+                <td>{{ pattern.pattern_name }}</td>
+                <td>{{ pattern.start_time|time:"H:i" }} ～ {{ pattern.end_time|time:"H:i" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
 {% endblock  %}
