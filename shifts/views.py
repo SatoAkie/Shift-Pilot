@@ -216,6 +216,9 @@ def shift_create_view(request):
     for req in comment_requests:
         comment_dict[req.user.id][req.date.day] = req.comment
     
+    calendar_days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
+
+    
     return render(request, 'shifts/shift_create.html',{
         'users': users,
         'current_month': first_day,
@@ -223,6 +226,7 @@ def shift_create_view(request):
         'shift_dict': shift_dict,
         'shift_id_dict': shift_id_dict,
         'comment_dict': comment_dict,
+        'calendar_days': calendar_days,
         'patterns': ShiftPattern.objects.all(),
     })
 
