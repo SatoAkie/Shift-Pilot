@@ -223,6 +223,7 @@ def shift_create_view(request):
         'shift_dict': shift_dict,
         'shift_id_dict': shift_id_dict,
         'comment_dict': comment_dict,
+        'patterns': ShiftPattern.objects.all(),
     })
 
 @login_required
