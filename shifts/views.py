@@ -11,11 +11,45 @@ from django.http import JsonResponse
 
 
 
+from django.shortcuts import render 
+from django.contrib.auth.decorators import login_required
+from datetime import date, timedelta, datetime
+import calendar
+from .models import UserShift, ShiftPattern, User
+
 @login_required
 def home(request):
-    return render(
-        request, 'shifts/home.html'
-    )
+    today = date.today()
+    month_param = request.GET.get("month")
+    current_date = datetime.strptime(month_param, "%Y-%m").date() if month_param else today
+
+    year = current_date.year
+    month = current_date.month
+    first_day = date(year, month, 1)
+    last_day = date(year, month, calendar.monthrange(year, month)[1])
+    calendar_days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
+
+    users = User.objects.filter(team=request.user.team)
+    user_shifts = UserShift.objects.filter(date__range=(first_day, last_day), user__in=users)
+
+    shift_dict = {user.id: {} for user in users}
+    for shift in user_shifts:
+        shift_dict[shift.user.id][shift.date.day] = shift.shift_pattern.pattern_name if shift.shift_pattern else ""
+
+    patterns = ShiftPattern.objects.all()
+
+    context = {
+        "calendar_days": calendar_days,
+        "users": users,
+        "shift_dict": shift_dict,
+        "patterns": patterns,
+        "current_month": current_date,
+        "prev_month_str": (first_day - timedelta(days=1)).strftime("%Y-%m"),
+        "next_month_str": (last_day + timedelta(days=1)).strftime("%Y-%m"),
+    }
+
+    return render(request, "shifts/home.html", context)
+
 
 @login_required
 def shift_request_view(request):
