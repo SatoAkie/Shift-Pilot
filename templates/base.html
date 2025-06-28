@@ -25,7 +25,7 @@
                             管理者メニュー
                         </a>
                         <ul class="dropdown-menu"> 
-                            {#<li><a class="dropdown-item" href="{% url 'shifts' %}">シフト作成</a></li>#}
+                            <li><a class="dropdown-item" href="{% url 'shifts:shift_create' %}">シフト作成</a></li>
                             <li><a class="dropdown-item" href="{% url 'accounts:user_manage' %}">ユーザー管理</a></li>
                         </ul>
                     </li>
