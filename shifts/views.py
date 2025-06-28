@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from datetime import date, timedelta, datetime
-import calendar, json
-from .models import ShiftRequest, ShiftPattern
+import calendar
+from .models import ShiftRequest, ShiftPattern, PatternAssignmentSummary,User
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
+from collections import defaultdict
 
 
 @login_required
@@ -63,7 +63,7 @@ def shift_request_view(request):
         return redirect('shifts:shift_request')
 
     return render(
-        request, 'shifts/shift_request.html',context= {
+        request, 'shifts/shift_request.html', {
             'year': year,
             'month': month,
             'calendar_days': calendar_days,
@@ -108,8 +108,68 @@ def shift_pattern_view(request):
                 max_people=1
             )
     patterns = ShiftPattern.objects.all()    
-    return render(request,'shifts/shiftpattern.html',{
+    return render(request,'shifts/shift_pattern.html',{
         'patterns': patterns,
     })
 
+@login_required
+def pattern_assignment_summary_view(request):
+    today = date.today()
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+    summaries = PatternAssignmentSummary.objects.filter(summary_year=year, summary_month=month)
+    users = User.objects.all()
+    patterns = ShiftPattern.objects.all()
 
+    summary_dict = defaultdict(lambda: defaultdict(int))
+    for s in summaries:
+        summary_dict[s.user_id][s.pattern_id] = s.assignment_count
+
+    max_counts = defaultdict(dict)
+    for user_id, pattern_counts in summary_dict.items():
+        if pattern_counts:
+            max_value = max(pattern_counts.values())
+            for pattern_id, count in pattern_counts.items():
+                if count == max_value:
+                    max_counts[user_id][pattern_id] = True
+
+    total_work_hours = defaultdict(float)
+    for summary in summaries:
+        if summary.pattern and summary.user:
+            start = datetime.combine(date.today(), summary.pattern.start_time)
+            end = datetime.combine(date.today(), summary.pattern.end_time)
+            hours = (end - start).seconds / 3600 
+            total_work_hours[summary.user_id] += hours * summary.assignment_count   
+
+    if month == 12:
+        last_day = date(year, 12, 31)
+    else:
+        last_day = date(year, month + 1, 1) - timedelta(days=1)
+    first_day =  date(year, month, 1)  
+
+    dayoff_counts = defaultdict(int)
+    requests = ShiftRequest.objects.filter(date__range =(first_day, last_day), is_day_off=True)
+    for req in requests:
+        dayoff_counts[req.user_id] += 1         
+
+    current_month = date(year, month, 1)
+    prev_month = (current_month.replace(day=1) - timedelta(days=1)).replace(day=1)
+    next_month = (current_month.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+    prev_month_str = f'{prev_month.year}-{prev_month.month}'
+    next_month_str = f'{next_month.year}-{next_month.month}'
+                           
+
+    return render(request,'shifts/pattern_assignment_summary.html',{
+        'year': year,
+        'month': month,
+        'users': users,
+        'patterns': patterns,
+        'summary_dict': summary_dict,
+        'max_counts': max_counts,
+        'total_work_hours': total_work_hours,
+        'dayoff_counts': dayoff_counts,
+        'prev_month_str': prev_month_str,
+        'next_month_str': next_month_str,
+        
+    })
