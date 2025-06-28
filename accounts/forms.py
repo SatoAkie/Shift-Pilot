@@ -49,3 +49,13 @@ class SignupForm(forms.ModelForm):
 class LoginForm(forms.Form):
     email = forms.EmailField(label="メールアドレス")
     password = forms.CharField(label="パスワード", widget=forms.PasswordInput())
+
+class UserUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('name', 'email')
+        labels = {
+            'name': '名前',
+            'email': 'メールアドレス',
+        }
+   

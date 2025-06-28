@@ -148,3 +148,19 @@ class CustomPasswordChangeView(PasswordChangeView):
     def form_valid(self, form):
         messages.success(self.request, 'パスワードを変更しました')
         return super().form_valid(form)
+    
+@login_required
+def user_update_view(request):
+    if request.method == 'POST':
+        form =forms.UserUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('accounts:user_update')
+    else:
+        form = forms.UserUpdateForm(instance=request.user)
+    return render(
+        request, 'accounts/user_update.html' ,{
+            'user': request.user,
+            'form': form,
+        }
+    )
