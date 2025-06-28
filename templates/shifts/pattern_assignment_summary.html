@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+  <h5 class="text-secondary ms-1 mb-4">シフトのバランスチェック</h5>
+
+ <div class="d-flex justify-content-center align-items-center mb-3">
+    <a href="?month={{ prev_month_str }}" class="btn btn-sm btn-outline-secondary me-3">&laquo;</a>
+    <h3 class="m-0">{{ current_month.year }}年{{ current_month.month }}月</h3>
+    <a href="?month={{ next_month_str }}" class="btn btn-sm btn-outline-secondary me-3">&raquo;</a>
+</div>
+
+
+  <div class="table-responsive">
+    <table class="table table-bordered text-center align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>ユーザー名</th>
+          <th>合計労働時間</th>
+          <th>休暇</th>
+          {% for pattern in patterns %}
+            <th>{{ pattern.pattern_name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+          <tr>
+            <td>{{ user.name }}</td>
+            <td>{{ total_work_hours|get_item:user.id|floatformat:1 }} h</td>
+            <td>{{ dayoff_counts|get_item:user.id|default:"0" }} 回</td>
+            {% for pattern in patterns %}
+              {% with count=summary_dict|get_item:user.id|get_item:pattern.id %}
+                <td {% if max_counts|get_item:user.id|get_item:pattern.id %} class="text-danger fw-bold" {% endif %}>
+                  {{ count|default:"0" }} 回
+                </td>
+              {% endwith %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="{% url 'shifts:shift_pattern' %}" class="btn btn-outline-primary">シフトパターンを編集</a>
+  </div>
+</div>
+{% endblock %}
