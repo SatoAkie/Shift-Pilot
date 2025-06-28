@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import CustomPasswordChangeView
 
 app_name = 'accounts'
 
@@ -13,4 +14,5 @@ urlpatterns = [
     path('invite', views.user_invite, name='user_invite'),
     path('invite/register/', views.invite_register_view, name='invite_register'),   
     path('mypage', views.mypage, name='mypage'),
+    path('password_change/', CustomPasswordChangeView.as_view(), name='password_change'),
 ]

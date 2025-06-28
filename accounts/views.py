@@ -7,6 +7,10 @@ from django.http import HttpResponseForbidden
 from django.contrib.auth import get_user_model
 import uuid
 from django.urls import reverse
+from django.contrib import messages
+from django.urls import reverse_lazy
+
+from django.contrib.auth.views import PasswordChangeView
 
 User = get_user_model()
 
@@ -137,4 +141,10 @@ def mypage(request):
             'form' : form,
     })
         
+class CustomPasswordChangeView(PasswordChangeView):
+    template_name = 'accounts/password_change.html'
+    success_url = reverse_lazy('shifts:home')
 
+    def form_valid(self, form):
+        messages.success(self.request, 'パスワードを変更しました')
+        return super().form_valid(form)
