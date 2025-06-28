@@ -1,5 +1,8 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 from django.conf import settings
+
+User = get_user_model()
 
 class ShiftRequest(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -26,4 +29,16 @@ class ShiftPattern(models.Model):
 
     def __str__(self):
         return f"{self.pattern_name}（{self.start_time}〜{self.end_time}）"
+    
+class PatternAssignmentSummary(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    pattern = models.ForeignKey(ShiftPattern, on_delete=models.SET_NULL, null=True)
 
+    summary_year = models.IntegerField()
+    summary_month = models.IntegerField()
+    assignment_count = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.pattern} ({self.summary_year}/{self.summary_month}): {self.assignment_count}回"

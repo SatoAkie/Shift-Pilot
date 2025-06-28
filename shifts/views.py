@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required
 from datetime import date, timedelta, datetime
 import calendar, json
 from .models import ShiftRequest, ShiftPattern
-from .import forms
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
