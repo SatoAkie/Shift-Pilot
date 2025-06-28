@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from datetime import date, timedelta, datetime
 import calendar
-from .models import ShiftRequest, ShiftPattern, PatternAssignmentSummary,User
+from .models import ShiftRequest, ShiftPattern, Shift, UserShift, PatternAssignmentSummary,User
 from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
+from calendar import monthrange
 
 
 @login_required
@@ -178,4 +179,30 @@ def pattern_assignment_summary_view(request):
         'prev_month_str': prev_month_str,
         'next_month_str': next_month_str,
         
+    })
+
+@login_required
+def shift_create_view(request):
+    today = date.today()
+    year = today.year
+    month = today.month
+    first_day = date(year, month, 1)
+    last_day = date(year, month, monthrange(year, month)[1])
+
+    team = request.user.team
+    users = team.user_set.all()
+
+    shifts = Shift.objects.filter(date__range=(first_day, last_day), team=team)
+    user_shifts = UserShift.objects.filter(shift__in=shifts).select_related('user', 'shift_pattern')
+
+    shift_dict = {user.id:{} for user in users}
+    for us in user_shifts:
+        day = us.shift.date.day
+        shift_dict[us.user.id][day] = us.shift.pattern.pattern_name
+
+    return render(request, 'shifts/shift_create.html',{
+        'users': users,
+        'current_month': first_day,
+        'days_in_month': last_day.day,
+        'shift_dict': shift_dict,
     })
