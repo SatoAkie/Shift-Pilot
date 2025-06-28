@@ -6,6 +6,9 @@ from .models import ShiftRequest, ShiftPattern, Shift, UserShift, PatternAssignm
 from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
 from calendar import monthrange
+from .utils import assign_shifts
+from django.http import JsonResponse
+
 
 
 @login_required
@@ -195,14 +198,80 @@ def shift_create_view(request):
     shifts = Shift.objects.filter(date__range=(first_day, last_day), team=team)
     user_shifts = UserShift.objects.filter(shift__in=shifts).select_related('user', 'shift_pattern')
 
-    shift_dict = {user.id:{} for user in users}
+    shift_dict = {user.id: {} for user in users}
+    shift_id_dict = {user.id: {} for user in users}
+
     for us in user_shifts:
         day = us.shift.date.day
         shift_dict[us.user.id][day] = us.shift.pattern.pattern_name
+        shift_id_dict[us.user.id][day] = us.shift.id
 
+
+    comment_dict = {user.id: {} for user in users}
+    comment_requests = ShiftRequest.objects.filter(
+        date__range=(first_day, last_day),
+        comment__isnull=False
+    ).exclude(comment='')
+
+    for req in comment_requests:
+        comment_dict[req.user.id][req.date.day] = req.comment
+    
     return render(request, 'shifts/shift_create.html',{
         'users': users,
         'current_month': first_day,
         'days_in_month': last_day.day,
         'shift_dict': shift_dict,
+        'shift_id_dict': shift_id_dict,
+        'comment_dict': comment_dict,
     })
+
+@login_required
+def auto_assign_shifts(request):
+    if request.method == 'POST':
+        today = date.today()
+        year = today.year
+        month = today.month
+
+        shifts = Shift.objects.filter(date__year=year, date__month=month)
+        team =request.user.team
+        users = team.user_set.all()
+
+        shift_requests = {}
+        for req in ShiftRequest.objects.filter(date__year=year,date__month=month):
+            shift_requests.setdefault(req.user_id, set()).add(req.date)
+
+        assigned = assign_shifts(users,shifts, shift_requests)
+
+        existing_pairs = set(
+        UserShift.objects.filter(shift__in=shifts)
+        .values_list('user_id', 'shift_id')
+        )
+
+        new_user_shifts = []
+        for user, shift in assigned:
+            if (user.id, shift.id) not in existing_pairs:
+                new_user_shifts.append(UserShift(user=user, shift=shift))
+
+        UserShift.objects.bulk_create(new_user_shifts)
+
+        return redirect('shifts:shift_create')
+        
+
+@csrf_exempt
+@login_required
+def update_user_shift(request):
+    if request.method == 'POST':
+        try:
+            user_id = int(request.POST.get('user_id'))
+            shift_id = int(request.POST.get('shift_id'))
+            pattern_id = int(request.POST.get('pattern_id'))
+
+            user_shift = UserShift.objects.get(user_id=user_id, shift_id=shift_id)
+            shift = user_shift.shift
+            shift.pattern_id = pattern_id
+            shift.save()
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False})
