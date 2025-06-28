@@ -155,6 +155,7 @@ def user_update_view(request):
         form =forms.UserUpdateForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'アカウント情報を変更しました')
             return redirect('accounts:user_update')
     else:
         form = forms.UserUpdateForm(instance=request.user)

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load add_class %}
+{% block content %}
+<div class="container mt-5">
+    <h5 class="text-secondary ms-1 mb-4">アカウント情報変更</h5>
+    <div class="d-flex justify-content-center">
+        <div style="width: 100%; max-width: 500px; padding: 30px; border-radius: 10px;">
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-success text-center" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.non_field_errors}}
+                <div class="mb-3">
+                    {{ form.name.label_tag }}
+                    {{ form.name|add_class:"form-control"}}
+                    {{ form.name.errors }}
+                </div>
+                <div class="mb-3">
+                    {{ form.email.label_tag }}
+                    {{ form.email|add_class:"form-control"}}
+                    {{ form.email.errors }}
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary px-5">変更</button>
+                </div>
+            </form>
+
+            <div class="text-center my-4">
+                <a href="{% url 'accounts:password_change' %}">パスワードを変更</a>
+            </div>
+        </div>
+    </div>
+</div>
