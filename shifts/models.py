@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from accounts.models import Team
 
 User = get_user_model()
 
@@ -29,6 +30,27 @@ class ShiftPattern(models.Model):
 
     def __str__(self):
         return f"{self.pattern_name}（{self.start_time}〜{self.end_time}）"
+
+class Shift(models.Model):
+    pattern = models.ForeignKey('ShiftPattern', on_delete=models.SET_NULL, null=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+
+    date = models.DateField()
+    max_people = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class UserShift(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    shift = models.ForeignKey(Shift,  on_delete=models.SET_NULL, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+            unique_together = ('user', 'shift')
+
+
     
 class PatternAssignmentSummary(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
