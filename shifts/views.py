@@ -27,7 +27,7 @@ def home(request):
 
     shift_dict = {user.id: {} for user in users}
     for shift in user_shifts:
-        pattern = shift.shift_pattern or shift.shift.pattern
+        pattern = shift.shift.pattern
         day = shift.shift.date.day
         shift_dict[shift.user.id][day] = pattern.pattern_name if pattern else ""
 
@@ -246,8 +246,8 @@ def shift_create_view(request):
 
     for us in user_shifts:
         day = us.shift.date.day
-        if us.shift.pattern:
-            shift_dict[us.user.id][day] = us.shift.pattern.id
+        if us.shift_pattern:
+            shift_dict[us.user.id][day] = us.shift_pattern.id
         else:
             shift_dict[us.user.id][day] = ""
         shift_id_dict[us.user.id][day] = us.shift.id
@@ -313,8 +313,8 @@ def auto_assign_shifts(request):
 
         shifts = Shift.objects.filter(date__range=(first_day, last_day),team=team)
        
-        UserShift.objects.filter(shift__in=shifts).delete()
-       
+        UserShift.objects.filter(shift__in=shifts, is_manual=False).delete()
+
         users = team.user_set.all()
 
         shift_requests = {}
@@ -331,8 +331,7 @@ def auto_assign_shifts(request):
         new_user_shifts = []
         for user, shift in assigned:
             if shift and (user.id, shift.id) not in existing_pairs:
-                user_shift = UserShift(user=user, shift=shift)
-                user_shift.shift_pattern = shift.pattern  
+                user_shift = UserShift(user=user, shift=shift, shift_pattern=shift.pattern, is_manual=False)
                 new_user_shifts.append(user_shift)
 
         UserShift.objects.bulk_create(new_user_shifts)
@@ -343,25 +342,32 @@ def auto_assign_shifts(request):
 @csrf_exempt
 def update_user_shift(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        user_id = data.get('user_id')
-        date_str = data.get('date')
-        pattern_id = data.get('pattern_id')
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+            date_str = data.get('date')
+            pattern_id = data.get('pattern_id')
 
-        if not all([user_id, date_str, pattern_id]):
-            return JsonResponse({'success': False, 'message': '必要な値が不足しています'}, status=400)
+            if not all([user_id, date_str, pattern_id]):
+                return JsonResponse({'success': False, 'message': '必要な値が不足しています'}, status=400)
 
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-        user = get_object_or_404(User, pk=user_id)
-        pattern = get_object_or_404(ShiftPattern, pk=pattern_id)
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            user = get_object_or_404(User, pk=user_id)
+            pattern = get_object_or_404(ShiftPattern, pk=pattern_id)
 
-        shift, _ = Shift.objects.get_or_create(date=date_obj, team=user.team)
-        shift.pattern = pattern
-        shift.save()
+            shift, _ = Shift.objects.get_or_create(date=date_obj, team=user.team, pattern=pattern)
+            
+            user_shift, _ = UserShift.objects.get_or_create(user=user, shift=shift)
+            user_shift.shift_pattern = pattern
+            user_shift.is_manual = True
+            user_shift.save()
 
-        user_shift, _ = UserShift.objects.get_or_create(user=user, shift=shift)
-        user_shift.shift_pattern = pattern
-        user_shift.save()
+            return JsonResponse({'success': True})
 
-        return JsonResponse({'success': True})
+        except Exception as e:
+            import traceback
+            print("❌ update_user_shift エラー:")
+            traceback.print_exc()
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
+    return JsonResponse({'success': False, 'error': 'POSTのみ対応'}, status=405)
