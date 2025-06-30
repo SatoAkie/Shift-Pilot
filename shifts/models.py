@@ -36,14 +36,13 @@ class Shift(models.Model):
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
 
     date = models.DateField()
-    max_people = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 class UserShift(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     shift = models.ForeignKey(Shift,  on_delete=models.SET_NULL, null=True, blank=True)
-
+    shift_pattern = models.ForeignKey(ShiftPattern, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -1,18 +1,41 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+.gray-btn {
+    background-color: #dee2e6;
+}
+.gray-btn:hover,
+.gray-btn:focus,
+.gray-btn:active {
+    background-color: #dee2e6 !important;
+    color: #000 !important;
+    border: 1px solid #ccc;
+    box-shadow: none;
+}
+</style>
+{% endblock %}
+
+{% load extras %}
 {% block content %}
 <div class="container mt-5">
   <h5 class="text-secondary ms-1 mb-4">シフト作成</h5>
 
   <div class="row">
-    <div class="col-md-3 mb-4">
-      <div class="list-group">
-        <a href="{% url 'shifts:shift_pattern' %}" class="list-group-item list-group-item-action">
-          シフトパターン登録
-        </a>
-        <a href="{% url 'shifts:pattern_assignment_summaries' %}" class="list-group-item list-group-item-action">
-          シフトのバランスチェック
-        </a>
+    <div class="col-md-3 d-flex justify-content-center">
+      <div class="mt-5">
+        <ul class="list-unstyled">
+          <li>
+            <a href="{% url 'shifts:shift_pattern' %}" class="text-decoration-underline text-dark d-inline-block mb-3">
+              シフトパターン登録
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'shifts:pattern_assignment_summaries' %}" class="text-decoration-underline text-dark d-inline-block mb-3">
+              シフトのバランスチェック
+            </a>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -38,32 +61,33 @@
               <tr>
                 <td>{{ user.name }}</td>
                 {% for day in calendar_days %}
-                  {% with code=shift_dict|get_item:user.id|get_item:day.day %}
                   <td>
                     {% with comment=comment_dict|get_item:user.id|get_item:day.day %}
                       {% if comment %}
-                        <span role="button"
-                              class="text-danger"
-                              data-bs-toggle="modal"
-                              data-bs-target="#commentModal"
-                              data-user="{{ user.name }}"
-                              data-date="{{ day|date:'Y-m-d' }}"
-                              data-comment="{{ comment }}">
+                        <span class="text-danger"
+                              role="button"
+                              tabindex="0"
+                              data-bs-toggle="popover"
+                              data-bs-trigger="focus"
+                              data-bs-placement="top"
+                              data-bs-title="コメント"
+                              data-bs-content="{{ comment }}">
                           🔔
                         </span><br>
                       {% endif %}
                     {% endwith %}
-                    <select class="form-select form-select-sm"
+                    <select class="form-select form-select-sm" style="min-width: 100px;"
                             data-user-id="{{ user.id }}"
-                            data-shift-id="{{ shift_id_dict|get_item:user.id|get_item:day.day }}">
+                            data-date="{{ day|date:'Y-m-d'}}"
+                            data-shift-id="{{ shift_id_dict|get_item:user.id|get_item:day.day|default_if_none:'' }}">
                       {% for pattern in patterns %}
-                        <option value="{{ pattern.id }}" {% if code == pattern.pattern_name %}selected{% endif %}>
+                        <option value="{{ pattern.id }}" 
+                          {% if pattern.id == shift_dict|get_item:user.id|get_item:day.day %}selected{% endif %}>
                           {{ pattern.pattern_name }}
                         </option>
                       {% endfor %}
                     </select>
                   </td>
-                  {% endwith %}
                 {% endfor %}
               </tr>
             {% endfor %}
@@ -84,23 +108,13 @@
         </table>
       </div>
 
-      <div class="mt-4">
-        <form method="POST" action="{% url 'shifts:auto_assign_shifts' %}">
+      <div class="d-flex justify-content-end mt-4">
+        <form method="POST" action="{% url 'shifts:shifts' %}?month={{ current_month|date:'Y-m' }}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-primary">
-            シフト自動作成
-          </button>
+          <input type="hidden" name="overwrite" value="true">
+          <input type="hidden" name="month" value="{{ current_month|date:'Y-m' }}">
+          <button type="submit" class="btn gray-btn text-dark">シフト自動作成</button>
         </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="commentModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-body">
-        <p id="modal-comment" class="mt-2"></p>
       </div>
     </div>
   </div>
@@ -108,23 +122,29 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const selects = document.querySelectorAll('select[data-user-id][data-shift-id]');
+    const selects = document.querySelectorAll('select[data-user-id][data-date]');
     selects.forEach(select => {
       select.addEventListener('change', function () {
         const userId = this.dataset.userId;
-        const shiftId = this.dataset.shiftId;
+        const date = this.dataset.date;
         const patternId = this.value;
+
+        console.log("🔼 送信データ:", {
+          user_id: userId,
+          date: date,
+          pattern_id: patternId
+        });
 
         fetch("{% url 'shifts:update_user_shift' %}", {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token }}'
           },
-          body: new URLSearchParams({
+          body: JSON.stringify({
             user_id: userId,
-            shift_id: shiftId,
-            pattern_id: patternId
+            date: date,
+            pattern_id: patternId,
           })
         })
         .then(response => response.json())
@@ -140,14 +160,9 @@
       });
     });
 
-    const modal = document.getElementById('commentModal');
-    modal.addEventListener('show.bs.modal', function (event) {
-      const trigger = event.relatedTarget;
-      const user = trigger.getAttribute('data-user');
-      const date = trigger.getAttribute('data-date');
-      const comment = trigger.getAttribute('data-comment');
-
-      document.getElementById('modal-comment').textContent = comment;
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.forEach(function (el) {
+      new bootstrap.Popover(el);
     });
   });
 </script>

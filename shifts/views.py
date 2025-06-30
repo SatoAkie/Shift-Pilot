@@ -1,21 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from datetime import date, timedelta, datetime
-import calendar
+import calendar, json
 from .models import ShiftRequest, ShiftPattern, Shift, UserShift, PatternAssignmentSummary,User
 from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
 from calendar import monthrange
 from .utils import assign_shifts
 from django.http import JsonResponse
-
-
-
-from django.shortcuts import render 
-from django.contrib.auth.decorators import login_required
-from datetime import date, timedelta, datetime
-import calendar
-from .models import UserShift, ShiftPattern, User
+from django.urls import reverse
 
 @login_required
 def home(request):
@@ -30,11 +23,13 @@ def home(request):
     calendar_days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
 
     users = User.objects.filter(team=request.user.team)
-    user_shifts = UserShift.objects.filter(date__range=(first_day, last_day), user__in=users)
+    user_shifts = UserShift.objects.filter(shift__date__range=(first_day, last_day), user__in=users)
 
     shift_dict = {user.id: {} for user in users}
     for shift in user_shifts:
-        shift_dict[shift.user.id][shift.date.day] = shift.shift_pattern.pattern_name if shift.shift_pattern else ""
+        pattern = shift.shift_pattern or shift.shift.pattern
+        day = shift.shift.date.day
+        shift_dict[shift.user.id][day] = pattern.pattern_name if pattern else ""
 
     patterns = ShiftPattern.objects.all()
 
@@ -220,24 +215,41 @@ def pattern_assignment_summary_view(request):
 
 @login_required
 def shift_create_view(request):
-    today = date.today()
-    year = today.year
-    month = today.month
+    month_param = request.GET.get('month')
+    if month_param:
+        try:
+            current_date = datetime.strptime(month_param, "%Y-%m").date()
+        except ValueError:
+            current_date = date.today()
+    else:
+        current_date = date.today()
+
+    year = current_date.year
+    month = current_date.month
     first_day = date(year, month, 1)
     last_day = date(year, month, monthrange(year, month)[1])
+    calendar_days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
+
+    prev_month = (first_day.replace(day=1) - timedelta(days=1)).replace(day=1)
+    next_month = (first_day.replace(day=28) + timedelta(days=4)).replace(day=1)
+    prev_month_str = prev_month.strftime('%Y-%m')
+    next_month_str = next_month.strftime('%Y-%m')
 
     team = request.user.team
     users = team.user_set.all()
 
     shifts = Shift.objects.filter(date__range=(first_day, last_day), team=team)
-    user_shifts = UserShift.objects.filter(shift__in=shifts).select_related('user', 'shift_pattern')
+    user_shifts = UserShift.objects.filter(shift__in=shifts).select_related('user', 'shift__pattern')
 
     shift_dict = {user.id: {} for user in users}
     shift_id_dict = {user.id: {} for user in users}
 
     for us in user_shifts:
         day = us.shift.date.day
-        shift_dict[us.user.id][day] = us.shift.pattern.pattern_name
+        if us.shift.pattern:
+            shift_dict[us.user.id][day] = us.shift.pattern.id
+        else:
+            shift_dict[us.user.id][day] = ""
         shift_id_dict[us.user.id][day] = us.shift.id
 
 
@@ -253,64 +265,103 @@ def shift_create_view(request):
     calendar_days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
 
     
+    rest_pattern = ShiftPattern.objects.filter(pattern_name='休み').first()
+    rest_pattern_id = rest_pattern.id if rest_pattern else None
+
     return render(request, 'shifts/shift_create.html',{
         'users': users,
-        'current_month': first_day,
-        'days_in_month': last_day.day,
+        'current_month': current_date,
+        'calendar_days': calendar_days,
         'shift_dict': shift_dict,
         'shift_id_dict': shift_id_dict,
         'comment_dict': comment_dict,
-        'calendar_days': calendar_days,
         'patterns': ShiftPattern.objects.all(),
+        'prev_month_str': prev_month_str,
+        'next_month_str': next_month_str,
+        'rest_pattern_id': rest_pattern_id,
     })
 
 @login_required
 def auto_assign_shifts(request):
     if request.method == 'POST':
-        today = date.today()
-        year = today.year
-        month = today.month
+        month_param = request.GET.get("month")
+        if month_param:
+            current_date = datetime.strptime(month_param, "%Y-%m").date()
+        else:
+            current_date = date.today()
+        year = current_date.year
+        month = current_date.month
 
-        shifts = Shift.objects.filter(date__year=year, date__month=month)
-        team =request.user.team
+        team = request.user.team
+        patterns = ShiftPattern.objects.all()
+        first_day = date(year, month, 1)
+        last_day = date(year, month, monthrange(year, month)[1])
+        calendar_days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
+
+        existing_shift_keys = set(
+            Shift.objects.filter(date__range=(first_day, last_day), team=team)
+            .values_list('date', 'pattern_id')
+        )
+
+        new_shifts = []
+        for day in calendar_days:
+            for pattern in patterns:
+                if (day, pattern.id) not in existing_shift_keys:
+                    new_shifts.append(Shift(date=day, pattern=pattern, team=team))
+
+        Shift.objects.bulk_create(new_shifts)
+
+        shifts = Shift.objects.filter(date__range=(first_day, last_day),team=team)
+       
+        UserShift.objects.filter(shift__in=shifts).delete()
+       
         users = team.user_set.all()
 
         shift_requests = {}
-        for req in ShiftRequest.objects.filter(date__year=year,date__month=month):
+        for req in ShiftRequest.objects.filter(date__range=(first_day, last_day)):
             shift_requests.setdefault(req.user_id, set()).add(req.date)
 
-        assigned = assign_shifts(users,shifts, shift_requests)
+        assigned = assign_shifts(users, shifts, shift_requests)
 
         existing_pairs = set(
-        UserShift.objects.filter(shift__in=shifts)
-        .values_list('user_id', 'shift_id')
+            UserShift.objects.filter(shift__in=shifts)
+            .values_list('user_id', 'shift_id')
         )
 
         new_user_shifts = []
         for user, shift in assigned:
-            if (user.id, shift.id) not in existing_pairs:
-                new_user_shifts.append(UserShift(user=user, shift=shift))
+            if shift and (user.id, shift.id) not in existing_pairs:
+                user_shift = UserShift(user=user, shift=shift)
+                user_shift.shift_pattern = shift.pattern  
+                new_user_shifts.append(user_shift)
 
         UserShift.objects.bulk_create(new_user_shifts)
 
-        return redirect('shifts:shift_create')
+        return redirect(f'{reverse("shifts:shift_create")}?month={month_param or current_date.strftime("%Y-%m")}')
         
 
 @csrf_exempt
-@login_required
 def update_user_shift(request):
     if request.method == 'POST':
-        try:
-            user_id = int(request.POST.get('user_id'))
-            shift_id = int(request.POST.get('shift_id'))
-            pattern_id = int(request.POST.get('pattern_id'))
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+        date_str = data.get('date')
+        pattern_id = data.get('pattern_id')
 
-            user_shift = UserShift.objects.get(user_id=user_id, shift_id=shift_id)
-            shift = user_shift.shift
-            shift.pattern_id = pattern_id
-            shift.save()
+        if not all([user_id, date_str, pattern_id]):
+            return JsonResponse({'success': False, 'message': '必要な値が不足しています'}, status=400)
 
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False})
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        user = get_object_or_404(User, pk=user_id)
+        pattern = get_object_or_404(ShiftPattern, pk=pattern_id)
+
+        shift, _ = Shift.objects.get_or_create(date=date_obj, team=user.team)
+        shift.pattern = pattern
+        shift.save()
+
+        user_shift, _ = UserShift.objects.get_or_create(user=user, shift=shift)
+        user_shift.shift_pattern = pattern
+        user_shift.save()
+
+        return JsonResponse({'success': True})
+

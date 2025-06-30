@@ -130,3 +130,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR/ 'media'
 
 AUTH_USER_MODEL = 'accounts.User'
+
+LOGIN_URL = '/shift_pilot/accounts/login/'
+LOGIN_REDIRECT_URL = '/shift_pilot/shifts/home/'

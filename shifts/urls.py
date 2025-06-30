@@ -10,5 +10,5 @@ urlpatterns = [
     path('pattern_assignment_summaries/', views.pattern_assignment_summary_view, name='pattern_assignment_summaries'),
     path('create/', views.shift_create_view, name='shift_create'),
     path('assign/', views.auto_assign_shifts, name='shifts'),
-
+    path('update-user-shift/', views.update_user_shift, name='update_user_shift'), 
 ]

@@ -1,4 +1,21 @@
 {% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+.gray-btn {
+    background-color: #dee2e6;
+}
+.gray-btn:hover,
+.gray-btn:focus,
+.gray-btn:active {
+    background-color: #dee2e6 !important;
+    color: #000 !important;
+    border: 1px solid #ccc;
+    box-shadow: none;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <h5 class="text-secondary ms-1 mb-4">ユーザー招待</h5>
@@ -7,7 +24,7 @@
         <div style="width: 100%; max-width: 500px;">
             <form method="POST" class="text-center mt-3">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-secondary text-dark btn-lg px-5">ユーザー招待URLを作成する</button>
+                <button type="submit" class="btn gray-btn text-dark btn-lg px-5">ユーザー招待URLを作成する</button>
             </form>
 
             {% if invite_url %}
@@ -18,7 +35,7 @@
             <p class="text-center">※リンクは1度利用されると無効になります</p>
 
             <div class="text-center mt-3">
-                <a href="{% url 'accounts:user_manage' %}">ユーザー管理画面へ戻る</a>
+                <a href="{% url 'accounts:user_manage' %}" class="text-black">ユーザー管理画面へ戻る</a>
             </div>
         </div>
     </div>

@@ -9,6 +9,9 @@ class ProfileImageForm(forms.ModelForm):
     class Meta:
         model  = User
         fields = ['profile_image']
+        widgets ={
+            'profile_image' : forms.FileInput(attrs={'class': 'form-control d-none' })
+        } 
 
 class SignupForm(forms.ModelForm):
 
