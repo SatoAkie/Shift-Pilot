@@ -96,6 +96,7 @@
       </div>
 
       <div class="mt-5">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <table class="table table-bordered w-50">
           <tbody>
             {% for pattern in patterns %}
@@ -122,6 +123,7 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const selects = document.querySelectorAll('select[data-user-id][data-date]');
     selects.forEach(select => {
       select.addEventListener('change', function () {
@@ -139,7 +141,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': csrftoken
           },
           body: JSON.stringify({
             user_id: userId,

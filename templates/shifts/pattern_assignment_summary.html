@@ -46,15 +46,13 @@
             <td>{{ user.name }}</td>
             <td>{{ total_work_hours|get_item:user.id|floatformat:1 }} h</td>
             <td>{{ dayoff_counts|get_item:user.id|default:"0" }} 回</td>
-            {% with count=summary_dict|get_item:user.id %}
               {% for pattern in patterns %}
-                {% with count=summary_dict|get_item:pattern.id %}
+                {% with count=summary_dict|get_item:user.id|get_item:pattern.id %}
                   <td {% if max_counts|get_item:user.id|get_item:pattern.id %} class="text-danger fw-bold" {% endif %}>
                     {{ count|default:"0" }} 回
                   </td>
                 {% endwith %}
               {% endfor %}
-            {% endwith %}
           </tr>
         {% endfor %}
       </tbody>

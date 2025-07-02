@@ -21,11 +21,17 @@
             <tbody>
                 {% for user in users %}
                 <tr>
-                    <td>{{ user.username }}</td>
+                    <td>{{ user.name }}</td>
                     {% for day in calendar_days %}
-                        {% with code=shift_dict|get_item:user.id|get_item:day.day %}
-                        <td>{{ code }}</td>
+                    <td>
+                        {% with pid=shift_dict|get_item:user.id|get_item:day.day %}
+                        {% for pattern in patterns %}
+                            {% if pattern.id == pid %}
+                            {{ pattern.pattern_name }}
+                            {% endif %}
+                        {% endfor %}
                         {% endwith %}
+                    </td>
                     {% endfor %}
                 </tr>
                 {% endfor %}

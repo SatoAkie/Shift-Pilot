@@ -23,13 +23,14 @@ def home(request):
     calendar_days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
 
     users = User.objects.filter(team=request.user.team)
-    user_shifts = UserShift.objects.filter(shift__date__range=(first_day, last_day), user__in=users)
+    user_shifts = UserShift.objects.filter(
+        shift__date__range=(first_day, last_day), user__in=users
+        ).select_related('shift_pattern', 'shift')
 
     shift_dict = {user.id: {} for user in users}
     for shift in user_shifts:
-        pattern = shift.shift.pattern
         day = shift.shift.date.day
-        shift_dict[shift.user.id][day] = pattern.pattern_name if pattern else ""
+        shift_dict[shift.user.id][day] = shift.shift_pattern.id if shift.shift_pattern else ""
 
     patterns = ShiftPattern.objects.all()
 
@@ -246,6 +247,10 @@ def shift_create_view(request):
 
     for us in user_shifts:
         day = us.shift.date.day
+
+        if day in shift_dict[us.user.id]:
+            continue
+
         if us.shift_pattern:
             shift_dict[us.user.id][day] = us.shift_pattern.id
         else:
@@ -312,6 +317,9 @@ def auto_assign_shifts(request):
         Shift.objects.bulk_create(new_shifts)
 
         shifts = Shift.objects.filter(date__range=(first_day, last_day),team=team)
+
+        none_pattern_shifts = [s for s in shifts if s.pattern is None]
+        
        
         UserShift.objects.filter(shift__in=shifts, is_manual=False).delete()
 
@@ -321,7 +329,9 @@ def auto_assign_shifts(request):
         for req in ShiftRequest.objects.filter(date__range=(first_day, last_day)):
             shift_requests.setdefault(req.user_id, set()).add(req.date)
 
-        assigned = assign_shifts(users, shifts, shift_requests)
+        valid_shifts = [shift for shift in shifts if shift.pattern is not None]
+
+        assigned = assign_shifts(users, valid_shifts, shift_requests)
 
         existing_pairs = set(
             UserShift.objects.filter(shift__in=shifts)
@@ -330,11 +340,41 @@ def auto_assign_shifts(request):
 
         new_user_shifts = []
         for user, shift in assigned:
-            if shift and (user.id, shift.id) not in existing_pairs:
+            if not shift or not shift.pattern:
+                continue
+
+
+            if (user.id, shift.id) not in existing_pairs:
                 user_shift = UserShift(user=user, shift=shift, shift_pattern=shift.pattern, is_manual=False)
                 new_user_shifts.append(user_shift)
 
         UserShift.objects.bulk_create(new_user_shifts)
+
+        PatternAssignmentSummary.objects.filter(
+            user__in=users,
+            summary_year=year,
+            summary_month=month
+        ).delete()
+
+        summary_counter = defaultdict(lambda: defaultdict(int))
+        for us in UserShift.objects.filter(shift__in=shifts, user__in=users):
+            if us.shift_pattern:
+                print(f"✅ Summary Count対象: user={us.user}, pattern={us.shift_pattern.pattern_name}")
+                summary_counter[us.user][us.shift_pattern] += 1
+
+        new_summaries = []
+        for user, pattern_counts in summary_counter.items():
+            for pattern, count in pattern_counts.items():
+                new_summaries.append(PatternAssignmentSummary(
+                    user=user,
+                    pattern=pattern,
+                    assignment_count=count,
+                    summary_year=year,
+                    summary_month=month
+                ))
+
+        PatternAssignmentSummary.objects.bulk_create(new_summaries)
+
 
         return redirect(f'{reverse("shifts:shift_create")}?month={month_param or current_date.strftime("%Y-%m")}')
         
@@ -355,8 +395,10 @@ def update_user_shift(request):
             user = get_object_or_404(User, pk=user_id)
             pattern = get_object_or_404(ShiftPattern, pk=pattern_id)
 
-            shift, _ = Shift.objects.get_or_create(date=date_obj, team=user.team, pattern=pattern)
-            
+            shift = Shift.objects.filter(date=date_obj, team=user.team, pattern=pattern).first()
+            if not shift:
+                shift = Shift.objects.create(date=date_obj, team=user.team, pattern=pattern)
+
             user_shift, _ = UserShift.objects.get_or_create(user=user, shift=shift)
             user_shift.shift_pattern = pattern
             user_shift.is_manual = True
@@ -366,7 +408,6 @@ def update_user_shift(request):
 
         except Exception as e:
             import traceback
-            print("❌ update_user_shift エラー:")
             traceback.print_exc()
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
