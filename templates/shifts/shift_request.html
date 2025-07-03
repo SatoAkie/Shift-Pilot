@@ -15,7 +15,7 @@
         <table class="table table-bordered text-center align-middle">
             <thead class="table-light">
                 <tr>
-                    <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
+                    <th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th>
                 </tr>
             </thead>
             <tbody>
@@ -24,27 +24,35 @@
                         {% if day.weekday == 0 and not forloop.first %}
                             </tr><tr>
                         {% endif %}
-                         <td onclick="toggleRequest(this)">
-                            <div class="d-flex flex-column align-item-center" >
-                                <div>{{ day.day }}</div>
-                                <input type="checkbox" name="selected_dates" value="{{ day|date:'Y-m-d' }}"
-                                    id="checkbox-{{ day }}" {% if day in existing_dates %}checked{% endif %}
-                                    style="display: none;">
- 
-                                <span id="mark-{{ day }}" class="text-success fs-4">
-                                {% if day in existing_dates %}○{% endif %}
-                                </span>
-                            
-                                <button type="button" class="btn btn-sm border-0 mt-1"
-                                    onclick="event.stopPropagation(); openCommentModal('{{ day }}')">
-                                    ✎
-                                </button> 
-                                <input type="hidden" name="comment_{{ day|date:'Y-m-d' }}" id="comment-hidden-{{ day }}" value="">
-                            </div>    
-                        </td>
+
+                        {% if day.month == month %}
+                            <td onclick="toggleRequest(this)">
+                                <div class="d-flex flex-column align-item-center">
+                                    <div>{{ day.day }}</div>
+                                    <input type="checkbox" name="selected_dates" value="{{ day|date:'Y-m-d' }}"
+                                        id="checkbox-{{ day }}" {% if day in existing_dates %}checked{% endif %}
+                                        style="display: none;">
+
+                                    <span id="mark-{{ day }}" class="fs-4">
+                                    {% if day in comment_dates %} 🔔{% endif %}
+                                    {% if day in day_off_dates %} ○ {% endif %}
+                                    </span>
+
+
+                                    <button type="button" class="btn btn-sm border-0 mt-1"
+                                        onclick="event.stopPropagation(); openCommentModal('{{ day }}')">
+                                        ✎
+                                    </button>
+                                    <input type="hidden" name="comment_{{ day|date:'Y-m-d' }}" id="comment-hidden-{{ day }}" value="">
+                                </div>
+                            </td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
                     {% endfor %}
                 </tr>
             </tbody>
+
         </table>
 
         <div class="modal fade" id="commentModal" tabindex="-1">
@@ -73,13 +81,11 @@
 <script>
     let currentTargetDay = "";
 
-    function toggleRequest(td) {
-        const checkbox = td.querySelector('input[type="checkbox"]');
-        const mark = td.querySelector('span');
+   function toggleRequest(td) {
+    const checkbox = td.querySelector('input[type="checkbox"]');
+    checkbox.checked = !checkbox.checked;
+}
 
-        checkbox.checked = !checkbox.checked;
-        mark.textContent = checkbox.checked ? '○' : '';
-    }
 
     function openCommentModal(day){
         currentTargetDay = day;

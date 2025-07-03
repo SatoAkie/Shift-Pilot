@@ -5,7 +5,7 @@ import calendar, json
 from .models import ShiftRequest, ShiftPattern, Shift, UserShift, PatternAssignmentSummary,User
 from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
-from calendar import monthrange
+from calendar import Calendar,monthrange
 from .utils import assign_shifts
 from django.http import JsonResponse
 from django.urls import reverse
@@ -25,12 +25,15 @@ def home(request):
     users = User.objects.filter(team=request.user.team)
     user_shifts = UserShift.objects.filter(
         shift__date__range=(first_day, last_day), user__in=users
-        ).select_related('shift_pattern', 'shift')
+        ).select_related('shift__pattern', 'shift')
 
     shift_dict = {user.id: {} for user in users}
     for shift in user_shifts:
         day = shift.shift.date.day
-        shift_dict[shift.user.id][day] = shift.shift_pattern.id if shift.shift_pattern else ""
+        if day in shift_dict[shift.user.id]:
+            continue
+        shift_dict[shift.user.id][day] = shift.shift.pattern.id if shift.shift.pattern else ""
+
 
     patterns = ShiftPattern.objects.all()
 
@@ -59,11 +62,16 @@ def shift_request_view(request):
     year = current_date.year
     month = current_date.month
 
+    cal = Calendar(firstweekday=0) 
+    month_weeks = cal.monthdatescalendar(year, month)  
+    calendar_days = [day for week in month_weeks for day in week] 
+
     first_day = date(year, month, 1)
     last_day = date(year, month, calendar.monthrange(year, month)[1])
-    calendar_days = [first_day + timedelta(days=i) for i in range ((last_day - first_day).days + 1)]
 
     existing_requests = ShiftRequest.objects.filter(user=request.user, date__range=(first_day,last_day))
+    day_off_dates = set(existing_requests.filter(is_day_off=True).values_list('date', flat=True))
+    comment_dates = set(existing_requests.exclude(comment="").exclude(comment__isnull=True).values_list('date', flat=True))
     existing_dates = set(existing_requests.values_list('date', flat=True))
 
     current_month = date(year, month, 1)
@@ -105,7 +113,9 @@ def shift_request_view(request):
             'existing_dates': existing_dates,
             'current_month' : current_month,
             'prev_month_str' : prev_month_str,
-            'next_month_str' : next_month_str
+            'next_month_str' : next_month_str,
+            'day_off_dates': day_off_dates,
+            'comment_dates': comment_dates,
         
         }
     )
@@ -187,10 +197,27 @@ def pattern_assignment_summary_view(request):
         last_day = date(year, month + 1, 1) - timedelta(days=1)
     first_day =  date(year, month, 1)  
 
+    rest_patterns = ShiftPattern.objects.filter(is_rest=True)
+
+    rest_counts = defaultdict(int)
+    for user in users:
+        rest_count = UserShift.objects.filter(
+            user=user,
+            shift__date__range=(first_day, last_day),
+            shift__pattern__in=rest_patterns 
+        ).count()
+        rest_counts[user.id] = rest_count
+
     dayoff_counts = defaultdict(int)
     requests = ShiftRequest.objects.filter(date__range =(first_day, last_day), is_day_off=True)
     for req in requests:
-        dayoff_counts[req.user_id] += 1         
+        dayoff_counts[req.user_id] += 1   
+
+    combined_rest_counts = defaultdict(int)
+    for user in users:
+        requested = dayoff_counts.get(user.id, 0)
+        actual_rest = rest_counts.get(user.id, 0)
+        combined_rest_counts[user.id] = requested + actual_rest      
 
     current_month = date(year, month, 1)
     prev_month = (current_month.replace(day=1) - timedelta(days=1)).replace(day=1)
@@ -208,7 +235,7 @@ def pattern_assignment_summary_view(request):
         'summary_dict': summary_dict,
         'max_counts': max_counts,
         'total_work_hours': total_work_hours,
-        'dayoff_counts': dayoff_counts,
+        'combined_rest_counts': combined_rest_counts, 
         'prev_month_str': prev_month_str,
         'next_month_str': next_month_str,
         
@@ -251,8 +278,8 @@ def shift_create_view(request):
         if day in shift_dict[us.user.id]:
             continue
 
-        if us.shift_pattern:
-            shift_dict[us.user.id][day] = us.shift_pattern.id
+        if us.shift and us.shift.pattern:
+            shift_dict[us.user.id][day] = us.shift.pattern.id
         else:
             shift_dict[us.user.id][day] = ""
         shift_id_dict[us.user.id][day] = us.shift.id
@@ -345,7 +372,7 @@ def auto_assign_shifts(request):
 
 
             if (user.id, shift.id) not in existing_pairs:
-                user_shift = UserShift(user=user, shift=shift, shift_pattern=shift.pattern, is_manual=False)
+                user_shift = UserShift(user=user, shift=shift, is_manual=False)
                 new_user_shifts.append(user_shift)
 
         UserShift.objects.bulk_create(new_user_shifts)
@@ -358,9 +385,8 @@ def auto_assign_shifts(request):
 
         summary_counter = defaultdict(lambda: defaultdict(int))
         for us in UserShift.objects.filter(shift__in=shifts, user__in=users):
-            if us.shift_pattern:
-                print(f"✅ Summary Count対象: user={us.user}, pattern={us.shift_pattern.pattern_name}")
-                summary_counter[us.user][us.shift_pattern] += 1
+            if us.shift and us.shift.pattern:
+                summary_counter[us.user][us.shift.pattern] += 1
 
         new_summaries = []
         for user, pattern_counts in summary_counter.items():
@@ -400,15 +426,12 @@ def update_user_shift(request):
                 shift = Shift.objects.create(date=date_obj, team=user.team, pattern=pattern)
 
             user_shift, _ = UserShift.objects.get_or_create(user=user, shift=shift)
-            user_shift.shift_pattern = pattern
             user_shift.is_manual = True
             user_shift.save()
 
             return JsonResponse({'success': True})
 
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
     return JsonResponse({'success': False, 'error': 'POSTのみ対応'}, status=405)

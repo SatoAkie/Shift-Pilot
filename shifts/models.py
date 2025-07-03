@@ -25,6 +25,7 @@ class ShiftPattern(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     max_people = models.IntegerField()
+    is_rest = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -47,14 +48,15 @@ class Shift(models.Model):
 class UserShift(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     shift = models.ForeignKey('Shift', on_delete=models.CASCADE)
-    shift_pattern = models.ForeignKey('ShiftPattern', null=True, blank=True, on_delete=models.SET_NULL)
     is_manual = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('user', 'shift')
 
     def __str__(self):
-        return f"{self.user} - {self.shift.date} - {self.shift_pattern or self.shift.pattern}"
+        pattern_name = self.shift.pattern.pattern_name if self.shift and self.shift.pattern else "未設定"
+        return f"{self.user.name} - {self.shift.date} - {pattern_name}"
+
     
 class PatternAssignmentSummary(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)

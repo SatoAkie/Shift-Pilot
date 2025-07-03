@@ -45,7 +45,7 @@
           <tr>
             <td>{{ user.name }}</td>
             <td>{{ total_work_hours|get_item:user.id|floatformat:1 }} h</td>
-            <td>{{ dayoff_counts|get_item:user.id|default:"0" }} 回</td>
+            <td>{{ combined_rest_counts|get_item:user.id|default:"0" }} 回</td>
               {% for pattern in patterns %}
                 {% with count=summary_dict|get_item:user.id|get_item:pattern.id %}
                   <td {% if max_counts|get_item:user.id|get_item:pattern.id %} class="text-danger fw-bold" {% endif %}>
@@ -60,7 +60,7 @@
   </div>
 
   <div class="text-center mt-4">
-    <a href="{% url 'shifts:shift_pattern' %}" class="btn gray-btn text-dark">シフトを編集する</a>
+    <a href="{% url 'shifts:shift_create' %}" class="btn gray-btn text-dark">シフトを編集する</a>
   </div>
 </div>
 {% endblock %}

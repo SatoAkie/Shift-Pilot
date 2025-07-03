@@ -7,8 +7,9 @@ def assign_shifts(users, shifts, shift_requests):
     user_shift_count = defaultdict(int)
     shift_map = defaultdict(list)
     assigned_pairs = []
-
     assigned_count_per_pattern = defaultdict(lambda: defaultdict(int))
+
+    user_assigned_dates = defaultdict(set)
 
     existing_pairs = set(
         UserShift.objects.filter(shift__in=shifts)
@@ -25,7 +26,6 @@ def assign_shifts(users, shifts, shift_requests):
         for shift in daily_shifts:
             pattern = shift.pattern
             if pattern is None:
-                print(f"⚠ shift with no pattern: {shift}")
                 continue
 
             if assigned_count_per_pattern[date][pattern.id] >= pattern.max_people:
@@ -36,6 +36,9 @@ def assign_shifts(users, shifts, shift_requests):
             candidates.sort(key=lambda u: user_shift_count[u.id])
 
             for user in candidates:
+                if date in user_assigned_dates[user.id]:
+                    continue
+
                 if (user.id, shift.id) in existing_pairs:       
                     continue
                  
@@ -55,12 +58,14 @@ def assign_shifts(users, shifts, shift_requests):
                     else:
                         break
                 if streak >= 4:
-                   
                     continue
                        
                 assigned_pairs.append((user, shift))
                 user_shift_count[user.id] += 1
                 assigned_count_per_pattern[date][pattern.id] += 1
+                
+                user_assigned_dates[user.id].add(date)
+                
                 if assigned_count_per_pattern[date][pattern.id] >= shift.pattern.max_people:
                     break
                 
