@@ -13,9 +13,10 @@ TEMPLATES_DIR= os.path.join(BASE_DIR,'templates')
 SECRET_KEY = 'django-insecure-_5hcg)(zrg9#4n1h)_4zd@uhb(o2mlcj6zpcoy7!j^=4z^xh3f'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '.pythonanywhere.com', 'aki.pythonanywhere.com']
+
 
 
 # Application definition
@@ -133,3 +134,15 @@ AUTH_USER_MODEL = 'accounts.User'
 
 LOGIN_URL = '/shift_pilot/accounts/login/'
 LOGIN_REDIRECT_URL = '/shift_pilot/shifts/home/'
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+from django.core.management.utils import get_random_secret_key
+SECRET_KEY = get_random_secret_key()  
+
+try:
+    from .local_settings import *
+except:
+    pass
+
