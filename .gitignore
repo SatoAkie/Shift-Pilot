@@ -6,3 +6,4 @@ __pycache__/
 *.py[cod]
 */migrations/__pycache__/
 */migrations/*.pyc
+local_settings.py
