@@ -1,146 +1,207 @@
 import random
 from collections import defaultdict
-from datetime import timedelta
-from .models import UserShift,ShiftPattern, Shift
+from datetime import datetime, date, timedelta
+from .models import UserShift, ShiftPattern, Shift
+
+def calculate_hours(start_time, end_time):
+    total_minutes = (datetime.combine(date.today(), end_time) - datetime.combine(date.today(), start_time)).seconds // 60
+    break_minutes = 60
+    work_minutes = max(0, total_minutes - break_minutes)
+    return work_minutes / 60
 
 def assign_shifts(users, shifts, shift_requests):
-    
     user_shift_count = defaultdict(int)
-    shift_map = defaultdict(list)
-    assigned_pairs = []
-    assigned_count_per_pattern = defaultdict(lambda: defaultdict(int))
-
     user_assigned_dates = defaultdict(set)
+    assigned_count_per_pattern = defaultdict(lambda: defaultdict(int))
+    assigned_pairs = []
+    weekly_hours = defaultdict(lambda: defaultdict(float)) 
+    user_shift_history = defaultdict(dict)
 
-    existing_pairs = set(
-        UserShift.objects.filter(shift__in=shifts)
-        .values_list('user_id' , 'shift_id')
-    )
-
+    shift_map = defaultdict(list)
     shift_dict = {}
+
+    user_pattern_count = defaultdict(lambda: defaultdict(int))
+
     for shift in shifts:
         shift_map[shift.date].append(shift)
         if shift.pattern:
             shift_dict[(shift.date, shift.pattern.id)] = shift
 
     try:
-        rest_pattern = ShiftPattern.objects.get(pattern_name = '○')
+        rest_pattern = ShiftPattern.objects.get(pattern_name='○')
     except ShiftPattern.DoesNotExist:
         rest_pattern = None
 
-    if rest_pattern:
-        user_rest_count = defaultdict(int)
+    if not rest_pattern:
+        return []
 
-        for user in users:
-            rest_dates = shift_requests.get(user.id, set())
-            for date in rest_dates:
-                if date in user_assigned_dates[user.id]:
-                    continue
-                if assigned_count_per_pattern[date][rest_pattern.id] >= rest_pattern.max_people:
-                    continue
-                
-                key = (date, rest_pattern.id)
-                rest_shift = shift_dict.get(key)
-                if not rest_shift:
-                    rest_shift = Shift.objects.create(date=date, team=user.team, pattern=rest_pattern)
-                    shift_map[date].append(rest_shift)
-                    shift_dict[key] = rest_shift
-
-                if (user.id, rest_shift.id) not in existing_pairs:
-                    UserShift.objects.get_or_create(user=user, shift=rest_shift)
-
-                user_assigned_dates[user.id].add(date)
-                user_rest_count[user.id] += 1
-                assigned_count_per_pattern[date][rest_pattern.id] += 1
-
-        for user in users:
-            current_rest = user_rest_count[user.id]
-            remaining = 8 - current_rest
-            if remaining <= 0:
+    
+    for user in users:
+        for date in shift_requests.get(user.id, set()):
+            if assigned_count_per_pattern[date][rest_pattern.id] >= rest_pattern.max_people:
+                continue
+            if date in user_assigned_dates[user.id]:
                 continue
 
-            candidates_dates =[
-                date for date in sorted(shift_map.keys())
-                if date not in user_assigned_dates[user.id] and
-                    assigned_count_per_pattern[date][rest_pattern.id] < rest_pattern.max_people
-                
-            ]
-            chosen_dates = random.sample(candidates_dates, min(remaining, len(candidates_dates)))
+            key = (date, rest_pattern.id)
+            shift = shift_dict.get(key)
+            if not shift:
+                shift = Shift.objects.create(date=date, team=user.team, pattern=rest_pattern)
+                shift_map[date].append(shift)
+                shift_dict[key] = shift
 
-            for date in chosen_dates:
-                key = (date, rest_pattern.id)
-                rest_shift = shift_dict.get(key)
-                if not rest_shift:
-                    rest_shift = Shift.objects.create(date=date, team=user.team, pattern=rest_pattern)
-                    shift_map[date].append(rest_shift)
-                    shift_dict[key] = rest_shift
+            if UserShift.objects.filter(user=user, shift=shift, is_manual=True).exists():
+                continue
 
-                if (user.id, rest_shift.id) not in existing_pairs:
-                    UserShift.objects.get_or_create(user=user, shift=rest_shift)
+            assigned_pairs.append((user, shift))
+            user_assigned_dates[user.id].add(date)
+            user_shift_history[user.id][date] = '○'
+            assigned_count_per_pattern[date][rest_pattern.id] += 1
 
-                user_assigned_dates[user.id].add(date)
-                assigned_count_per_pattern[date][rest_pattern.id] += 1
-
+   
     for date in sorted(shift_map.keys()):
         daily_shifts = shift_map[date]
         random.shuffle(daily_shifts)
 
         for shift in daily_shifts:
             pattern = shift.pattern
-            if pattern is None or (rest_pattern and pattern.id == rest_pattern.id):
+            if not pattern or pattern.id == rest_pattern.id:
                 continue
 
             if assigned_count_per_pattern[date][pattern.id] >= pattern.max_people:
                 continue
 
+            pattern_hours = calculate_hours(pattern.start_time, pattern.end_time)
+
             candidates = list(users)
             random.shuffle(candidates)
-            candidates.sort(key=lambda u: user_shift_count[u.id])
+            candidates.sort(
+                key=lambda u: (user_pattern_count[u.id][pattern.id], user_shift_count[u.id])
+            )
 
             for user in candidates:
                 if date in user_assigned_dates[user.id]:
                     continue
-                if (user.id, shift.id) in existing_pairs:       
+                if date in shift_requests.get(user.id, set()):
                     continue
-                if date in shift_requests.get(user.id, set()):               
-                    continue
-
-                prev_shift= UserShift.objects.filter(user=user, shift__date=date - timedelta(days=1)).first()
-                if prev_shift and prev_shift.shift.pattern_id == pattern.id:              
+                if UserShift.objects.filter(user=user, shift=shift, is_manual=True).exists():
                     continue
 
-                streak = 0
-                for i in range(1, 5):
-                    prev_date = date - timedelta(days=i)
-                    prev_us =  UserShift.objects.filter(user=user, shift__date=prev_date).select_related('shift__pattern').first()
-                    if prev_us and prev_us.shift.pattern.pattern_name != '休み':
-                        streak += 1
+                week_start = date - timedelta(days=date.weekday())               
+                if weekly_hours[user.id][week_start] >= 42:
+                    continue
+
+            for user in candidates:
+                if date in user_assigned_dates[user.id]:
+                    continue
+                if date in shift_requests.get(user.id, set()):
+                    continue
+                if UserShift.objects.filter(user=user, shift=shift, is_manual=True).exists():
+                    continue
+
+                week_start = date - timedelta(days=date.weekday())               
+                if weekly_hours[user.id][week_start] >= 42:
+                    continue
+
+                consecutive_days = 0
+                for i in range(1, 6):  
+                    prev_day = date - timedelta(days=i)
+                    val = user_shift_history[user.id].get(prev_day)
+                    if val and val != '○':
+                        consecutive_days += 1
                     else:
                         break
-                if streak >= 4:
+                if consecutive_days >= 5:
                     continue
-                       
+              
+                prev1 = user_shift_history[user.id].get(date - timedelta(days=1))
+                prev2 = user_shift_history[user.id].get(date - timedelta(days=2))
+                if prev1 == pattern.pattern_name and prev2 == pattern.pattern_name:
+                    continue
+
                 assigned_pairs.append((user, shift))
-                user_shift_count[user.id] += 1
-                assigned_count_per_pattern[date][pattern.id] += 1
-                
                 user_assigned_dates[user.id].add(date)
-                
-                if assigned_count_per_pattern[date][pattern.id] >= shift.pattern.max_people:
+                user_shift_count[user.id] += 1
+                user_shift_history[user.id][date] = pattern.pattern_name
+                weekly_hours[user.id][week_start] += pattern_hours
+                assigned_count_per_pattern[date][pattern.id] += 1
+
+                user_pattern_count[user.id][pattern.id] += 1
+
+                if assigned_count_per_pattern[date][pattern.id] >= pattern.max_people:
                     break
-                
+
+   
+    for user in users:
+        for date in sorted(shift_map.keys()):
+            if date in user_assigned_dates[user.id]:
+                continue
+            if assigned_count_per_pattern[date][rest_pattern.id] >= rest_pattern.max_people:
+                continue
+
+            week_start = date - timedelta(days=date.weekday())
+            if weekly_hours[user.id][week_start] < 40:
+                continue  
+
+            key = (date, rest_pattern.id)
+            shift = shift_dict.get(key)
+            if not shift:
+                shift = Shift.objects.create(date=date, team=user.team, pattern=rest_pattern)
+                shift_map[date].append(shift)
+                shift_dict[key] = shift
+
+            if UserShift.objects.filter(user=user, shift=shift, is_manual=True).exists():
+                continue
+
+            assigned_pairs.append((user, shift))
+            user_assigned_dates[user.id].add(date)
+            user_shift_history[user.id][date] = '○'
+            assigned_count_per_pattern[date][rest_pattern.id] += 1
+
+    for user in users:
+            current_rest_count = sum(1 for v in user_shift_history[user.id].values() if v == '○')
+            needed_rest = max(0, 8 - current_rest_count)
+
+            if needed_rest <= 0:
+                continue
+
+            for date in sorted(shift_map.keys()):
+                if date in user_assigned_dates[user.id]:
+                    continue
+                if assigned_count_per_pattern[date][rest_pattern.id] >= rest_pattern.max_people:
+                    continue
+
+                key = (date, rest_pattern.id)
+                shift = shift_dict.get(key)
+                if not shift:
+                    shift = Shift.objects.create(date=date, team=user.team, pattern=rest_pattern)
+                    shift_map[date].append(shift)
+                    shift_dict[key] = shift
+
+                if UserShift.objects.filter(user=user, shift=shift, is_manual=True).exists():
+                    continue
+
+                assigned_pairs.append((user, shift))
+                user_assigned_dates[user.id].add(date)
+                user_shift_history[user.id][date] = '○'
+                assigned_count_per_pattern[date][rest_pattern.id] += 1
+                needed_rest -= 1
+
+                if needed_rest <= 0:
+                    break
+    
     existing_user_shift_pairs = set(
-        UserShift.objects.filter(shift__in=shifts)
-        .values_list('user_id','shift_id')
+        UserShift.objects.filter(shift__in=shifts).values_list('user_id', 'shift_id')
+    )
+    manual_pairs = set(
+        UserShift.objects.filter(shift__in=shifts, is_manual=True).values_list('user_id', 'shift_id')
     )
 
     UserShift.objects.bulk_create([
         UserShift(user=user, shift=shift)
         for user, shift in assigned_pairs
         if (user.id, shift.id) not in existing_user_shift_pairs
+        and (user.id, shift.id) not in manual_pairs
     ])
 
-    UserShift.objects.get_or_create(user=user, shift=rest_shift)
-
-
-    return [(u, s) for u, s in assigned_pairs if s is not None]
+    return assigned_pairs
