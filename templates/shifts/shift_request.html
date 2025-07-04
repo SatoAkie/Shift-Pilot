@@ -83,8 +83,19 @@
 
    function toggleRequest(td) {
     const checkbox = td.querySelector('input[type="checkbox"]');
+    const span = td.querySelector('span');
+    
     checkbox.checked = !checkbox.checked;
+
+    if (checkbox.checked) {
+        if (!span.innerHTML.includes('○')) {
+            span.innerHTML = '○ ' + span.innerHTML;
+        }
+    } else {
+        span.innerHTML = span.innerHTML.replace('○ ', '');
+    }
 }
+
 
 
     function openCommentModal(day){
