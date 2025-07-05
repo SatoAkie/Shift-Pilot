@@ -284,15 +284,11 @@ def shift_create_view(request):
             shift_dict[us.user.id][day] = ""
         shift_id_dict[us.user.id][day] = us.shift.id
 
-    for user in users:
-        shift_for_day1 = shift_dict[user.id].get(1)
-        print(f"{user.name} の8/1のシフト: {shift_for_day1}")
-
     comment_dict = {user.id: {} for user in users}
     comment_requests = ShiftRequest.objects.filter(
         date__range=(first_day, last_day),
         comment__isnull=False
-    ).exclude(comment='')
+    ).exclude(comment='').filter(user__in=users)
 
     for req in comment_requests:
         comment_dict[req.user.id][req.date.day] = req.comment
