@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect ,get_object_or_404
 from .import forms
-from .models import Role, Invitation
+from .models import Role, Team, Invitation
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
@@ -20,11 +20,17 @@ def signup(request):
         user = signup_form.save(commit=False)
         user.set_password(signup_form.cleaned_data['password'])
         user.is_active = True 
-        user.role = Role.objects.get(role_name="一般")
-        user.is_staff = False
+        try:
+            user.role = Role.objects.get(role_name="管理者")
+        except Role.DoesNotExist:
+            user.role = None
+        user.is_staff = True
+        new_team = Team.objects.create()
+        user.team =new_team
         user.save()
         login(request, user) 
         return redirect('shifts:home')
+    
     return render(
         request, 'accounts/signup.html',context= {
             'signup_form': signup_form,
