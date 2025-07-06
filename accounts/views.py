@@ -31,6 +31,10 @@ def signup(request):
         login(request, user) 
         return redirect('shifts:home')
     
+    elif request.method == 'POST':
+        messages.error(request, "入力内容に不備があります。")
+
+    
     return render(
         request, 'accounts/signup.html',context= {
             'signup_form': signup_form,
@@ -48,7 +52,11 @@ def user_login(request):
             login(request, user)
             return redirect('shifts:home')
         else:
-            return redirect('accounts:login')
+            messages.error(request, "メールアドレスまたはパスワードが正しくありません")
+    else:
+        messages.error(request, "入力内容に不備があります")
+
+
     return render(
         request, 'accounts/user_login.html', context={
             'login_form': login_form,
@@ -126,6 +134,9 @@ def invite_register_view(request):
         invitation.save()
         login(request, user)
         return redirect('shifts:home')
+    elif request.method == 'POST':
+        messages.error(request, '入力内容に不備があります。')
+        
     return render(request, 'accounts/signup.html', {
         'signup_form': form,
         'hide_navbar': True
@@ -162,6 +173,8 @@ def user_update_view(request):
             form.save()
             messages.success(request, 'アカウント情報を変更しました')
             return redirect('accounts:user_update')
+        else:
+            messages.error(request, '入力内容に不備があります')
     else:
         form = forms.UserUpdateForm(instance=request.user)
     return render(
