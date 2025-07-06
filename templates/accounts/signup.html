@@ -5,14 +5,24 @@
     <h5 class="text-secondary ms-1 mb-4">新規アカウント登録</h5>
     <div class="d-flex justify-content-center">
         <div style="width: 100%; max-width: 500px; padding: 30px; border-radius: 10px;">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-danger">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+
             <form method="POST">
                 {% csrf_token %}
                 {{ signup_form.non_field_errors }}
+                
 
                 <div class="mb-3 row">
                     <label for="id_name" class="col-sm-4 col-form-label text-end">名前：</label>
                     <div class="col-sm-8">
                         {{ signup_form.name|add_class:"form-control" }}
+                        {% if signup_form.name.errors %}
+                            <div class="text-danger small">{{ signup_form.name.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -20,6 +30,9 @@
                     <label for="id_email" class="col-sm-4 col-form-label text-end">メールアドレス：</label>
                     <div class="col-sm-8">
                         {{ signup_form.email|add_class:"form-control" }}
+                        {% if signup_form.email.errors %}
+                            <div class="text-danger small">{{ signup_form.email.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -27,6 +40,9 @@
                     <label for="id_password" class="col-sm-4 col-form-label text-end">パスワード：</label>
                     <div class="col-sm-8">
                         {{ signup_form.password|add_class:"form-control" }}
+                        {% if signup_form.password.errors %}
+                            <div class="text-danger small">{{ signup_form.password.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -34,6 +50,9 @@
                     <label for="id_confirm_password" class="col-sm-4 col-form-label text-end">パスワード再入力：</label>
                     <div class="col-sm-8">
                         {{ signup_form.confirm_password|add_class:"form-control" }}
+                        {% if signup_form.confirm_password.errors %}
+                            <div class="text-danger small">{{ signup_form.confirm_password.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
 

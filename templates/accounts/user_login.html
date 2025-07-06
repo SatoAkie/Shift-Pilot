@@ -4,6 +4,12 @@
 <div class="container mt-5">
     <div class="d-flex justify-content-center">
         <div style="width: 100%; max-width: 500px; padding: 30px; border-radius: 10px;">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-danger">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+
             <form method="POST">
                 {% csrf_token %}
                 {{ login_form.non_field_errors }}
@@ -12,6 +18,9 @@
                     <label for="id_email" class="col-sm-4 col-form-label text-end">メールアドレス：</label>
                     <div class="col-sm-8">
                         {{ login_form.email|add_class:"form-control" }}
+                        {% if login_form.email.errors %}
+                            <div class="text-danger small">{{ login_form.email.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -19,6 +28,9 @@
                     <label for="id_password" class="col-sm-4 col-form-label text-end">パスワード：</label>
                     <div class="col-sm-8">
                         {{ login_form.password|add_class:"form-control" }}
+                        {% if login_form.password.errors %}
+                            <div class="text-danger small">{{ login_form.password.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
 
