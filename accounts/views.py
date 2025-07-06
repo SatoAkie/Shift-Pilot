@@ -44,17 +44,19 @@ def signup(request):
 
 def user_login(request):
     login_form = forms.LoginForm(request.POST or None)
-    if login_form.is_valid():
-        email = login_form.cleaned_data['email']
-        password = login_form.cleaned_data['password']
-        user = authenticate(request, username=email, password=password)
-        if user:
-            login(request, user)
-            return redirect('shifts:home')
+
+    if request.method == 'POST':
+        if login_form.is_valid():
+            email = login_form.cleaned_data['email']
+            password = login_form.cleaned_data['password']
+            user = authenticate(request, username=email, password=password)
+            if user:
+                login(request, user)
+                return redirect('shifts:home')
+            else:
+                messages.error(request, "メールアドレスまたはパスワードが正しくありません")
         else:
-            messages.error(request, "メールアドレスまたはパスワードが正しくありません")
-    else:
-        messages.error(request, "入力内容に不備があります")
+            messages.error(request, "入力内容に不備があります")
 
 
     return render(
