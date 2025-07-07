@@ -174,7 +174,7 @@ def pattern_assignment_summary_view(request):
     summaries = PatternAssignmentSummary.objects.filter(summary_year=year, summary_month=month)
 
     if not summaries.exists():
-        messages.warning(request, "この月のシフトが存在しません")
+        messages.error(request, "この月のシフトが存在しません")
 
     users = User.objects.all()
     patterns = ShiftPattern.objects.all()
