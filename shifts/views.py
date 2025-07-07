@@ -9,6 +9,7 @@ from calendar import Calendar,monthrange
 from .utils import assign_shifts
 from django.http import JsonResponse
 from django.urls import reverse
+from django.contrib import messages
 
 @login_required
 def home(request):
@@ -83,6 +84,9 @@ def shift_request_view(request):
 
     if request.method == "POST":
         selected_dates = request.POST.getlist("selected_dates")
+        if not selected_dates:
+            messages.error(request, "日付を選択してください")
+            return redirect('shifts:shift_request')
         
         for date_str in [d.strftime('%Y-%m-%d') for d in calendar_days]:
             day = date.fromisoformat(date_str)
@@ -168,6 +172,10 @@ def pattern_assignment_summary_view(request):
     year = current_date.year
     month = current_date.month
     summaries = PatternAssignmentSummary.objects.filter(summary_year=year, summary_month=month)
+
+    if not summaries.exists():
+        messages.warning(request, "この月のシフトが存在しません")
+
     users = User.objects.all()
     patterns = ShiftPattern.objects.all()
 
@@ -321,6 +329,11 @@ def auto_assign_shifts(request):
         month = current_date.month
 
         team = request.user.team
+
+        if not ShiftPattern.objects.exists():
+            messages.error(request, '勤務パターンが登録されていないため、シフトを自動作成できません。')
+            return redirect(f'{reverse("shifts:shift_create")}?month={request.GET.get("month", date.today().strftime("%Y-%m"))}')
+        
         patterns = ShiftPattern.objects.all()
         first_day = date(year, month, 1)
         last_day = date(year, month, monthrange(year, month)[1])
@@ -354,7 +367,9 @@ def auto_assign_shifts(request):
 
         valid_shifts = [shift for shift in shifts if shift.pattern is not None]
 
-        assigned = assign_shifts(users, valid_shifts, shift_requests)
+        assigned, errors = assign_shifts(users, valid_shifts, shift_requests)
+        for msg in errors:
+            messages.error(request, msg)
 
         existing_pairs = set(
             UserShift.objects.filter(shift__in=shifts)

@@ -12,6 +12,15 @@
 
     <form method="POST">
         {% csrf_token %}
+        
+        {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} text-center" role="alert">
+            {{ message }}
+            </div>
+        {% endfor %}
+        {% endif %}
+
         <table class="table table-bordered text-center align-middle">
             <thead class="table-light">
                 <tr>

@@ -16,11 +16,11 @@ def assign_shifts(users, shifts, shift_requests):
     assigned_pairs = []
     weekly_hours = defaultdict(lambda: defaultdict(float)) 
     user_shift_history = defaultdict(dict)
-
     shift_map = defaultdict(list)
     shift_dict = {}
-
     user_pattern_count = defaultdict(lambda: defaultdict(int))
+
+    errors = []
 
     for shift in shifts:
         shift_map[shift.date].append(shift)
@@ -33,13 +33,15 @@ def assign_shifts(users, shifts, shift_requests):
         rest_pattern = None
 
     if not rest_pattern:
-        return []
+        return assigned_pairs, ["○（休み）パターンが登録されていません"]
 
     
     for user in users:
         for date in shift_requests.get(user.id, set()):
             if assigned_count_per_pattern[date][rest_pattern.id] >= rest_pattern.max_people:
+                errors.append(f"{date.strftime('%m/%d')} の休み希望が定員オーバーで割り当てできません")
                 continue
+                
             if date in user_assigned_dates[user.id]:
                 continue
 
@@ -69,6 +71,7 @@ def assign_shifts(users, shifts, shift_requests):
                 continue
 
             if assigned_count_per_pattern[date][pattern.id] >= pattern.max_people:
+                errors.append(f"{date.strftime('%m/%d')} の {pattern.pattern_name} は定員を超えています")
                 continue
 
             pattern_hours = calculate_hours(pattern.start_time, pattern.end_time)
@@ -89,6 +92,7 @@ def assign_shifts(users, shifts, shift_requests):
 
                 week_start = date - timedelta(days=date.weekday())               
                 if weekly_hours[user.id][week_start] >= 42:
+                    errors.append(f"{user.name} の勤務時間が {week_start.strftime('%m/%d')}週で週40時間を超えています")
                     continue
 
             for user in candidates:
@@ -204,4 +208,4 @@ def assign_shifts(users, shifts, shift_requests):
         and (user.id, shift.id) not in manual_pairs
     ])
 
-    return assigned_pairs
+    return assigned_pairs, errors
