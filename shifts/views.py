@@ -106,6 +106,8 @@ def shift_request_view(request):
                     'comment':comment
                 }
             )
+
+        messages.success(request, "申請が完了しました。")
         return redirect('shifts:shift_request')
 
     return render(
