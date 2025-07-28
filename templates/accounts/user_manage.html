@@ -38,19 +38,24 @@
                         <td>{{user.name}}</td>
                         <td>{{user.email}}</td>
                         <td>
-                        <form method="POST" action="{% url 'accounts:role_update' user.id %}">
-                            {% csrf_token %}
-                                <select name="role_id" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
-                                    {% for role in roles  %}
-                                        <option value="{{ role.id }}" {% if user.role.id == role.id %}selected{% endif %}>
-                                        {{ role.role_name }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
+                            <form method="POST" action="{% url 'accounts:role_update' user.id %}" 
+                                class="d-flex justify-content-between align-items-center" 
+                                onsubmit="return confirm('このユーザーの権限を変更しますか？')">
+                                {% csrf_token %}
+                                <div class="me-2" style="flex-grow: 1;">
+                                    <select name="role_id" class="form-select form-select-sm ">
+                                        {% for role in roles  %}
+                                            <option value="{{ role.id }}" {% if user.role.id == role.id %}selected{% endif %}>
+                                            {{ role.role_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type ="submit" class="btn btn-sm btn-primary">変更</button>
                             </form>
                         </td>
                         <td>
-                            <form method="POST" action="{% url 'accounts:user_delete' user.id %}">
+                            <form method="POST" action="{% url 'accounts:user_delete' user.id %}" onsubmit="return confirm('このユーザーを削除しますか？');">
                                 {% csrf_token %}
                                 <button class="btn btn-sm btn-danger">削除</button>
                             </form>

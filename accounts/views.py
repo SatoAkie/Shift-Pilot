@@ -5,12 +5,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth import get_user_model
-import uuid
 from django.urls import reverse
 from django.contrib import messages
-from django.urls import reverse_lazy
-
 from django.contrib.auth.views import PasswordChangeView
+from django.contrib.auth import update_session_auth_hash
+
 
 User = get_user_model()
 
@@ -100,7 +99,13 @@ def user_role_update_view(request,user_id):
         role = get_object_or_404(Role, id=role_id)
         user.role = role
         user.save()
-        return redirect('accounts:user_manage')
+
+        if role.role_name == '一般' and user == request.user:
+            messages.info(request, "権限が変更されたため、ホーム画面に戻りました")
+            return redirect('shifts:home')
+        else:
+            messages.success(request, f"{user.name} さんのロールを『{role.role_name}』に変更しました")
+            return redirect('accounts:user_manage')
     else:
         return HttpResponseForbidden("不正なアクセスです")
     
@@ -131,6 +136,10 @@ def invite_register_view(request):
         user.set_password(form.cleaned_data['password'])
         user.team = invitation.team
         user.is_active = True
+
+    
+        user.role = Role.objects.get(role_name = "一般")
+        
         user.save()
         invitation.is_used = True
         invitation.save()
@@ -161,11 +170,12 @@ def mypage(request):
         
 class CustomPasswordChangeView(PasswordChangeView):
     template_name = 'accounts/password_change.html'
-    success_url = reverse_lazy('shifts:home')
-
+    
     def form_valid(self, form):
+        user = form.save()
+        update_session_auth_hash(self.request, user)
         messages.success(self.request, 'パスワードを変更しました')
-        return super().form_valid(form)
+        return render(self.request, self.template_name, {'form': form})
     
 @login_required
 def user_update_view(request):

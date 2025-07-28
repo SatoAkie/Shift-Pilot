@@ -3,20 +3,62 @@
 {% block content %}
 <div class="container mt-5">
     <h5 class="text-secondary ms-1 mb-4">シフトパターン登録</h5>
+
+    {% if error_message %}
+    <div class="alert alert-danger text-center">
+        {{ error_message }}
+    </div>
+    {% endif %}
+
+    {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <div class="text-center">
+        {{ message }}
+             </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
+        </div>
+    {% endfor %}
+    {% endif %}
+
     <form method="POST">
         {% csrf_token %}
         <table class="table table-borderless text-center align-middle" id="pattern-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">パターン名</th>
+                    <th style="width: 30%;">勤務時間</th>
+                    <th style="width: 10%;">人数</th>
+                </tr>
+            </thead>
             <tbody id="pattern-table-body">
+                {% if patterns|length == 0 %}
+                <tr>
+                    <td style="width: 10%;">
+                        <input type="text" name="pattern_name_1" value="" class="form-control text-center" placeholder="パターン名">
+                    </td>
+                    <td style="width: 30%;">
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+                            <input type="time" name="start_time_1" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始">
+                            <span class="mx-1">～</span>
+                            <input type="time" name="end_time_1" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了">
+                        </div>
+                    </td>
+                    <td style="width: 10%;">
+                        <input type="number" name="max_people_1" value="" class="form-control text-center" min="1" placeholder="人数">
+                    </td>
+                </tr>
+                {% endif %}
                 {% for pattern in patterns %}
                 <tr>
                     <td style="width: 10%;">
                         <input type="text" name="pattern_name_{{ forloop.counter }}" value="{{ pattern.pattern_name }}" class="form-control text-center">
                     </td>
                     <td style="width: 30%;">
-                        <div class="d-flex justify-content-center align-items-center gap-1">
-                            <input type="time" name="start_time_{{ forloop.counter }}" value="{{ pattern.start_time|time:'H:i' }}" class="form-control" style="width: 6rem;">
-                            ~
-                            <input type="time" name="end_time_{{ forloop.counter }}" value="{{ pattern.end_time|time:'H:i' }}" class="form-control" style="width: 6rem;">
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+                            <input type="time" name="start_time_{{ forloop.counter }}" value="{{ pattern.start_time|time:'H:i' }}" class="form-control text-center" style="width: 6rem;">
+                            <span class="mx-1">～</span>
+                            <input type="time" name="end_time_{{ forloop.counter }}" value="{{ pattern.end_time|time:'H:i' }}" class="form-control text-center" style="width: 6rem;">
                         </div>
                     </td>
                     <td style="width: 10%;">
@@ -28,20 +70,28 @@
             </tbody>
         </table>
 
-        <input type="hidden" id="total-input" name="total" value="{{ patterns|length }}">
+        {% if patterns|length == 0 %}
+            <input type="hidden" id="total-input" name="total" value="1">
+        {% else %}
+            <input type="hidden" id="total-input" name="total" value="{{ patterns|length }}">
+        {% endif %}
 
         <div class="text-center mb-4">
             <button type="button" id="add-row-btn" class="btn btn-outline-secondary">シフトパターンを追加</button>
         </div>
 
-        <div class="text-center">
+        <div class="text-center mb-5">
             <button type="submit" class="btn btn-primary px-5">登録</button>
         </div>
     </form>
 </div>
 
 <script>
-let rowCount = {{ patterns|length }};
+{% if patterns|length == 0 %}
+  let rowCount = 1;
+{% else %}
+  let rowCount = {{ patterns|length }};
+{% endif %}
 
 document.getElementById('add-row-btn').addEventListener('click', function () {
     rowCount++;
@@ -50,22 +100,29 @@ document.getElementById('add-row-btn').addEventListener('click', function () {
     const row = document.createElement('tr');
     row.innerHTML = `
         <td style="width: 10%;">
-            <input type="text" name="pattern_name_${rowCount}" value="新パターン" class="form-control text-center">
+            <input type="text" name="pattern_name_${rowCount}" value="" class="form-control text-center" placeholder="パターン名">
         </td>
         <td style="width: 30%;">
-            <div class="d-flex justify-content-center align-items-center gap-1">
-                <input type="time" name="start_time_${rowCount}" value="00:00" class="form-control" style="width: 6rem;">
-                ~
-                <input type="time" name="end_time_${rowCount}" value="00:00" class="form-control" style="width: 6rem;">
+            <div class="d-flex justify-content-center align-items-center gap-2">
+                <input type="time" name="start_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始">
+                <span class="mx-1">～</span>
+                <input type="time" name="end_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了">
             </div>
         </td>
         <td style="width: 10%;">
-            <input type="number" name="max_people_${rowCount}" value="1" class="form-control text-center" min="1">
+            <input type="number" name="max_people_${rowCount}" value="" class="form-control text-center" min="1" placeholder="人数">
         </td>
     `;
     tbody.appendChild(row);
 
     document.getElementById('total-input').value = rowCount;
+});
+
+window.addEventListener('DOMContentLoaded', function () {
+    const active = document.activeElement;
+    if (active && active.tagName.toLowerCase() === 'input') {
+        active.blur();
+    }
 });
 </script>
 {% endblock %}

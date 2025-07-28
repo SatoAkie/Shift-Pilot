@@ -13,12 +13,23 @@
     border: 1px solid #ccc;
     box-shadow: none;
 }
+.shift-cell {
+    background-color: #e3f2fd !important;
+    border: 1px solid #dee2e6 !important;
+}
 </style>
 {% endblock %}
 
 {% load extras %}
 {% block content %}
 <div class="container mt-5">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-danger text-center">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
   <h5 class="text-secondary ms-1 mb-4">シフト作成</h5>
 
   <div class="row">
@@ -26,12 +37,12 @@
       <div class="mt-5">
         <ul class="list-unstyled">
           <li>
-            <a href="{% url 'shifts:shift_pattern' %}" class="text-decoration-underline text-dark d-inline-block mb-3">
+            <a href="{% url 'shifts:shift_pattern' %}" class="text-black d-inline-block mb-3">
               シフトパターン登録
             </a>
           </li>
           <li>
-            <a href="{% url 'shifts:pattern_assignment_summaries' %}" class="text-decoration-underline text-dark d-inline-block mb-3">
+            <a href="{% url 'shifts:pattern_assignment_summaries' %}" class="text-black d-inline-block mb-3">
               シフトのバランスチェック
             </a>
           </li>
@@ -61,32 +72,59 @@
               <tr>
                 <td>{{ user.name }}</td>
                 {% for day in calendar_days %}
-                  <td>
-                    {% with comment=comment_dict|get_item:user.id|get_item:day.day %}
-                      {% if comment %}
-                        <span class="text-danger"
-                              role="button"
-                              tabindex="0"
-                              data-bs-toggle="popover"
-                              data-bs-trigger="focus"
-                              data-bs-placement="top"
-                              data-bs-title="コメント"
-                              data-bs-content="{{ comment }}">
-                          🔔
-                        </span><br>
-                      {% endif %}
+                  <td class="shift-cell">
+                    {% with us=shift_dict|get_item:user.id|get_item:day %}
+                      {% with comment=comment_dict|get_item:user.id|get_item:day.day %}
+                        {% if comment %}
+                          <span class="text-danger"
+                                role="button"
+                                tabindex="0"
+                                data-bs-toggle="popover"
+                                data-bs-trigger="focus"
+                                data-bs-placement="top"
+                                data-bs-title="コメント"
+                                data-bs-content="{{ comment }}">
+                            💬
+                          </span><br>
+                        {% endif %}
+                      {% endwith %}
+
+                      <select 
+                          class="form-select form-select-sm
+                            {% if us.shift is None and us.is_error %} border-danger
+                            {% elif us.shift is None %} text-secondary
+                            {% endif %}"
+                          style="min-width: 100px;"
+                          data-user-id="{{ user.id }}"
+                          data-date="{{ day|date:'Y-m-d'}}"
+                          data-shift-id="{{ us.shift.id|default:'' }}">
+
+                          
+                          {% if us.shift %}
+                              {% for pattern in patterns %}
+                                  <option value="{{ pattern.id }}"
+                                    {% if us.shift.pattern.id == pattern.id %}selected{% endif %}>
+                                    {{ pattern.pattern_name }}
+                                  </option>
+                              {% endfor %}
+                              <option value="">休</option>
+                          
+                          {% elif us.is_error %}
+                              <option value="" selected></option> 
+                              {% for pattern in patterns %}
+                                  <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
+                              {% endfor %}
+                              <option value="">休</option>
+
+                          {% else %}
+                              <option value="" selected>休</option>
+                              {% for pattern in patterns %}
+                                  <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
+                              {% endfor %}
+                          {% endif %}
+                      </select>
+
                     {% endwith %}
-                    <select class="form-select form-select-sm" style="min-width: 100px;"
-                            data-user-id="{{ user.id }}"
-                            data-date="{{ day|date:'Y-m-d'}}"
-                            data-shift-id="{{ shift_id_dict|get_item:user.id|get_item:day.day|default_if_none:'' }}">
-                      {% for pattern in patterns %}
-                        <option value="{{ pattern.id }}" 
-                          {% if pattern.id == shift_dict|get_item:user.id|get_item:day.day %}selected{% endif %}>
-                          {{ pattern.pattern_name }}
-                        </option>
-                      {% endfor %}
-                    </select>
                   </td>
                 {% endfor %}
               </tr>

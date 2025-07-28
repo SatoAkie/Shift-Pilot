@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load add_class %}
+
 {% block content %}
 <div class="container mt-5">
     <h5 class="text-secondary ms-1 mb-4">マイページ</h5>
@@ -7,7 +8,12 @@
         <div class = 'col-md-4 text-center'>
             <div class="mb-2">
                 {% if user.profile_image %}
-                    <img src = "{{ user.profile_image.url }}" class="rounded-circle mb-3" width="140" height="140" alt="プロフィール画像">
+                    <img src = "{{ user.profile_image.url }}" 
+                        class="rounded-circle mb-3" 
+                        width="140" 
+                        height="140" 
+                        style="object-fit: cover;"
+                        alt="プロフィール画像">
                 {% else %}
                     <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
                         class="rounded-circle mb-3"

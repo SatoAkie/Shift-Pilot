@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+.calendar-cell {
+     background-color: #e3f2fd !important; 
+    border: 1px solid #dee2e6 !important; 
+}
+</style>
+
 <div class="container mt-5">
     <h5 class="text-secondary ms-1 mb-4">休み希望申請</h5>
 
@@ -15,8 +22,11 @@
         
         {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} text-center" role="alert">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="text-center">
             {{ message }}
+                </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
             </div>
         {% endfor %}
         {% endif %}
@@ -24,7 +34,7 @@
         <table class="table table-bordered text-center align-middle">
             <thead class="table-light">
                 <tr>
-                    <th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th>
+                    <th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="text-primary">土</th><th class="text-danger">日</th></th>
                 </tr>
             </thead>
             <tbody>
@@ -35,7 +45,7 @@
                         {% endif %}
 
                         {% if day.month == month %}
-                            <td onclick="toggleRequest(this)">
+                            <td class="calendar-cell" onclick="toggleRequest(this)">
                                 <div class="d-flex flex-column align-item-center">
                                     <div>{{ day.day }}</div>
                                     <input type="checkbox" name="selected_dates" value="{{ day|date:'Y-m-d' }}"
@@ -43,8 +53,8 @@
                                         style="display: none;">
 
                                     <span id="mark-{{ day }}" class="fs-4">
-                                    {% if day in comment_dates %} 🔔{% endif %}
-                                    {% if day in day_off_dates %} ○ {% endif %}
+                                    {% if day in comment_dates %}💬{% endif %}
+                                    {% if day in day_off_dates %}休{% endif %}
                                     </span>
 
 
@@ -56,7 +66,7 @@
                                 </div>
                             </td>
                         {% else %}
-                            <td></td>
+                            <td class="calendar-cell"></td>
                         {% endif %}
                     {% endfor %}
                 </tr>
@@ -97,11 +107,11 @@
     checkbox.checked = !checkbox.checked;
 
     if (checkbox.checked) {
-        if (!span.innerHTML.includes('○')) {
-            span.innerHTML = '○ ' + span.innerHTML;
+        if (!span.innerHTML.includes('休')) {
+            span.innerHTML = '休' + span.innerHTML;
         }
     } else {
-        span.innerHTML = span.innerHTML.replace('○ ', '');
+        span.innerHTML = span.innerHTML.replace('休', '');
     }
 }
 
@@ -116,10 +126,22 @@
     }
 
     function saveComment(){
-        const text = document.getElementById("commentInput").value;
-        document.getElementById("comment-hidden-" + currentTargetDay).value =text;
-        const modal = bootstrap.Modal.getInstance(document.getElementById("commentModal"));
-        modal.hide();
+    const text = document.getElementById("commentInput").value;
+    const hidden = document.getElementById("comment-hidden-" + currentTargetDay);
+    hidden.value = text;
+
+    const markSpan = document.getElementById("mark-" + currentTargetDay);
+    if (text.trim()) {
+        if (!markSpan.innerHTML.includes('💬')) {
+            markSpan.innerHTML = '💬' + markSpan.innerHTML;
+        }
+    } else {
+        markSpan.innerHTML = markSpan.innerHTML.replace('💬', '');
     }
+
+    const modal = bootstrap.Modal.getInstance(document.getElementById("commentModal"));
+    modal.hide();
+}
+
 </script>
 {% endblock %}

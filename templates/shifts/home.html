@@ -1,7 +1,22 @@
 {% extends "base.html" %}
 {% load extras %}
 {% block content %}
+<style>
+.shift-td {
+  background-color: #e3f2fd !important;
+}
+</style>
 <div class="container mt-4">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success alert-dismissible fade show text-center mx-auto w-75" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <div class="d-flex justify-content-center align-items-center mb-3">
         <a href="?month={{ prev_month_str }}" class="btn btn-sm btn-outline-secondary me-3">&laquo;</a>
         <h3 class="m-0">{{ current_month.year }}年{{ current_month.month }}月</h3>
@@ -23,14 +38,18 @@
                 <tr>
                     <td>{{ user.name }}</td>
                     {% for day in calendar_days %}
-                    <td>
+                    <td class="shift-td">
                         {% with pid=shift_dict|get_item:user.id|get_item:day.day %}
-                        {% for pattern in patterns %}
-                            {% if pattern.id == pid %}
-                            {{ pattern.pattern_name }}
+                             {% if pid %}
+                                {% for pattern in patterns %}
+                                    {% if pattern.id == pid %}
+                                        {{ pattern.pattern_name }}
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-secondary">休</span>
                             {% endif %}
-                        {% endfor %}
-                        {% endwith %}
+                     {% endwith %}
                     </td>
                     {% endfor %}
                 </tr>
@@ -38,9 +57,7 @@
             </tbody>
         </table>
     </div>
-    
-    <div class="mt-5">
-  
+
    <div class="mt-5">
         <table class="table table-bordered w-50">
           <tbody>
