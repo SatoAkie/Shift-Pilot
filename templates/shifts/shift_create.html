@@ -21,13 +21,25 @@
 select.form-select {
     width: 80px !important;
     min-width: auto !important;
-    padding-left: 4px;
-    padding-right: 4px;
-    font-size: 0.9rem;
+    padding: 2px 4px !important;
+    font-size: 0.85rem !important;
+    line-height: 1.2 !important;
 }
 td.shift-cell {
     max-width: 90px;
+    height: 70px;
+    vertical-align: middle !important;
+    padding: 4px !important;
+    white-space: nowrap;
     overflow: hidden;
+}
+td.username-cell {
+    writing-mode: horizontal-tb !important;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: bold;
+    padding: 4px;
+    height: 70px;
     white-space: nowrap;
 }
 </style>
@@ -89,7 +101,7 @@ td.shift-cell {
           <tbody>
             {% for user in users %}
               <tr>
-                <td>{{ user.name }}</td>
+                <td class="username-cell">{{ user.name }}</td>
                 {% for day in calendar_days %}
                   <td class="shift-cell">
                     {% with us=shift_dict|get_item:user.id|get_item:day %}
