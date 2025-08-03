@@ -17,6 +17,19 @@
     background-color: #e3f2fd !important;
     border: 1px solid #dee2e6 !important;
 }
+
+select.form-select {
+    width: 80px !important;
+    min-width: auto !important;
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 0.9rem;
+}
+td.shift-cell {
+    max-width: 90px;
+    overflow: hidden;
+    white-space: nowrap;
+}
 </style>
 {% endblock %}
 
@@ -100,7 +113,6 @@
                             {% if us.shift is None and us.is_error %} border-danger
                             {% elif us.shift is None %} text-secondary
                             {% endif %}"
-                          style="min-width: 80px;"
                           data-user-id="{{ user.id }}"
                           data-date="{{ day|date:'Y-m-d'}}"
                           data-shift-id="{{ us.shift.id|default:'' }}">
