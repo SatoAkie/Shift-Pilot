@@ -81,9 +81,6 @@ def assign_shifts(users, shifts, shift_requests):
                 # 連勤制限（最大5連勤）
                 consecutive_days = [day - timedelta(days=i) for i in range(1, 6)]
                 if all(user_shift_history[user.id].get(d) not in [None, '休'] for d in consecutive_days):
-                    for d in consecutive_days:
-                        pattern_name = user_shift_history[user.id].get(d)
-                        print(f"{user.name} の {d} = {pattern_name}")
                     continue
                 # 同一パターンの連続回避
                 if user_shift_history[user.id].get(day - timedelta(days=1)) == pattern.pattern_name:
@@ -125,7 +122,6 @@ def assign_shifts(users, shifts, shift_requests):
                     break  # 途中に休みがあればカウント中断
 
             if consecutive_work_days >= 5:
-                print(f"{user.name} の {day} は過去5日間すべて勤務（{consecutive_work_days}日） -> 休み補完")
                 assigned_pairs.append(UserShift(
                     user=user,
                     shift=None,

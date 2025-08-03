@@ -227,13 +227,19 @@ def pattern_assignment_summary_view(request):
     for s in summaries:
         summary_dict[s.user_id][s.pattern_id] = s.assignment_count
 
-    max_counts = defaultdict(dict)
+    pattern_user_counts = defaultdict(lambda: defaultdict(int))  
     for user_id, pattern_counts in summary_dict.items():
-        if pattern_counts:
-            max_value = max(pattern_counts.values())
-            for pattern_id, count in pattern_counts.items():
-                if count == max_value:
-                    max_counts[user_id][pattern_id] = True
+        for pattern_id, count in pattern_counts.items():
+            pattern_user_counts[pattern_id][user_id] = count
+
+    max_counts = defaultdict(dict) 
+    for pattern_id, user_counts in pattern_user_counts.items():
+        if not user_counts:
+            continue
+        max_value = max(user_counts.values())
+        for user_id, count in user_counts.items():
+            if count == max_value:
+                max_counts[user_id][pattern_id] = True
 
     total_work_hours = defaultdict(float)
     for summary in summaries:
@@ -272,9 +278,7 @@ def pattern_assignment_summary_view(request):
 
     combined_rest_counts = defaultdict(int)
     for user in users:
-        requested = dayoff_counts.get(user.id, 0)
-        actual_rest = rest_counts.get(user.id, 0)
-        combined_rest_counts[user.id] = requested + actual_rest      
+        combined_rest_counts[user.id] = rest_counts.get(user.id, 0)      
 
     current_month = date(year, month, 1)
     prev_month = (current_month.replace(day=1) - timedelta(days=1)).replace(day=1)
