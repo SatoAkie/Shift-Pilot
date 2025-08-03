@@ -33,15 +33,18 @@
         {% csrf_token %}
         
         {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <div class="text-center">
-            {{ message }}
+            {% for message in messages %}
+                <div class="alert 
+                            {% if message.tags == 'error' %}alert-danger
+                            {% elif message.tags == 'success' %}alert-success
+                            {% else %}alert-info{% endif %} 
+                            alert-dismissible fade show text-center mx-auto w-75" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
                 </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
-            </div>
-        {% endfor %}
+            {% endfor %}
         {% endif %}
+
 
         <table class="table table-bordered text-center align-middle">
             <thead class="table-light">
