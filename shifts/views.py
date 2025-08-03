@@ -372,11 +372,11 @@ def auto_assign_shifts(request):
 
         team = request.user.team
 
-        if not ShiftPattern.objects.exists():
+        if not ShiftPattern.objects.filter(team=team).exists():
             messages.error(request, '勤務パターンが登録されていないため、シフトを自動作成できません。')
             return redirect(f'{reverse("shifts:shift_create")}?month={month_param or date.today().strftime("%Y-%m")}')
 
-        patterns = ShiftPattern.objects.all()
+        patterns = ShiftPattern.objects.filter(team=team)
         first_day = date(year, month, 1)
         last_day = date(year, month, monthrange(year, month)[1])
         calendar_days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
@@ -404,7 +404,7 @@ def auto_assign_shifts(request):
         ).delete()
         
         shift_requests = {}
-        for req in ShiftRequest.objects.filter(date__range=(first_day, last_day)):
+        for req in ShiftRequest.objects.filter(date__range=(first_day, last_day), is_day_off=True):
             shift_requests.setdefault(req.user_id, set()).add(req.date)
 
         valid_shifts = [s for s in shifts if s.pattern is not None]
