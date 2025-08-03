@@ -29,11 +29,16 @@ def home(request):
     ).select_related('shift__pattern', 'shift')
 
     shift_dict = {user.id: {} for user in users}
-    for shift in user_shifts:
+    error_dict = defaultdict(set)
+
+    for shift in user_shifts: 
+        day = shift.date.day
+
         if shift.shift is None:
+            if shift.is_error:
+                error_dict[shift.user.id].add(day)
             continue  
 
-        day = shift.shift.date.day
         if day in shift_dict[shift.user.id]:
             continue
         shift_dict[shift.user.id][day] = shift.shift.pattern.id if shift.shift.pattern else ""
@@ -46,6 +51,7 @@ def home(request):
         "calendar_days": calendar_days,
         "users": users,
         "shift_dict": shift_dict,
+        "error_dict": error_dict,
         "patterns": patterns,
         "current_month": current_date,
         "prev_month_str": (first_day - timedelta(days=1)).strftime("%Y-%m"),
@@ -404,8 +410,12 @@ def auto_assign_shifts(request):
         valid_shifts = [s for s in shifts if s.pattern is not None]
 
         assigned, errors = assign_shifts(users, valid_shifts, shift_requests)
-        for msg in errors:
-            messages.error(request, msg)
+        messages.success(request, "シフトを作成しました")
+        if errors:
+            messages.error(
+                request,
+                "勤務が一部割り当てられませんでした。赤枠で表示された部分を手動で入力してください"
+            )
 
         existing_user_date_pairs = set(
             UserShift.objects.filter(

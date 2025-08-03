@@ -100,14 +100,15 @@ def user_role_update_view(request,user_id):
         user.role = role
         user.save()
 
+        if user != request.user:
+            messages.success(request, f"{user.name} さんのロールを『{role.role_name}』に変更しました")
+
         if role.role_name == '一般' and user == request.user:
             messages.info(request, "権限が変更されたため、ホーム画面に戻りました")
             return redirect('shifts:home')
-        else:
-            messages.success(request, f"{user.name} さんのロールを『{role.role_name}』に変更しました")
-            return redirect('accounts:user_manage')
-    else:
-        return HttpResponseForbidden("不正なアクセスです")
+        return redirect('accounts:user_manage')
+
+    return HttpResponseForbidden("不正なアクセスです")
     
 @login_required
 def user_invite(request):

@@ -24,12 +24,18 @@
 {% block content %}
 <div class="container mt-5">
   {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-danger text-center">
-        {{ message }}
-      </div>
-    {% endfor %}
-  {% endif %}
+  {% for message in messages %}
+    <div class="alert 
+                {% if message.tags == 'success' %}alert-success
+                {% elif message.tags == 'error' %}alert-danger
+                {% else %}alert-info{% endif %}
+                alert-dismissible fade show text-center mx-auto w-75" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
   <h5 class="text-secondary ms-1 mb-4">シフト作成</h5>
 
   <div class="row">

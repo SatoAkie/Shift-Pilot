@@ -19,6 +19,13 @@ def assign_shifts(users, shifts, shift_requests):
     assigned_count = defaultdict(lambda: defaultdict(int))
     user_assigned_dates = defaultdict(set)
     user_shift_history = defaultdict(dict)
+
+    for us in UserShift.objects.filter(user__in=users).select_related('shift__pattern', 'shift'):
+        if us.shift and us.shift.pattern:
+            user_shift_history[us.user.id][us.date] = us.shift.pattern.pattern_name
+        else:
+            user_shift_history[us.user.id][us.date] = '休'
+
     weekly_hours = defaultdict(lambda: defaultdict(float))
     user_pattern_count = defaultdict(lambda: defaultdict(int))
     errors = []
@@ -70,8 +77,8 @@ def assign_shifts(users, shifts, shift_requests):
                     continue
 
                 # 連勤制限（最大5連勤）
-                prev_days = [day - timedelta(days=i) for i in range(1, 6)]
-                if all(user_shift_history[user.id].get(d) not in [None, '休'] for d in prev_days):
+                consecutive_days = [day - timedelta(days=i) for i in range(1, 6)]
+                if all(user_shift_history[user.id].get(d) not in [None, '休'] for d in consecutive_days):
                     continue
 
                 # 同一パターンの連続回避
@@ -106,27 +113,16 @@ def assign_shifts(users, shifts, shift_requests):
 
             week_start = day - timedelta(days=day.weekday())
 
-            # 今週の勤務時間が40時間未満なら → 「休み」として補完（is_error=False）
-            if weekly_hours[user.id][week_start] < 40:
-                assigned_pairs.append(UserShift(
-                    user=user,
-                    shift=None,
-                    date=day,
-                    is_manual=False,
-                    is_error=False  # 通常の「休」
-                ))
-                user_shift_history[user.id][day] = '休'
-            else:
-                # 週40h到達済 → 割り当て不能扱い（赤枠）
-                assigned_pairs.append(UserShift(
-                    user=user,
-                    shift=None,
-                    date=day,
-                    is_manual=False,
-                    is_error=True  # エラー
-                ))
-                user_shift_history[user.id][day] = '未'
-
+            # 補完する休みは「エラー扱いにせず休みとして表示」
+            assigned_pairs.append(UserShift(
+                user=user,
+                shift=None,
+                date=day,
+                is_manual=False,
+                is_error=False  # ← すべて「正常な休み」として扱う
+            ))
+            user_shift_history[user.id][day] = '休'
             user_assigned_dates[user.id].add(day)
+
 
     return assigned_pairs, errors
