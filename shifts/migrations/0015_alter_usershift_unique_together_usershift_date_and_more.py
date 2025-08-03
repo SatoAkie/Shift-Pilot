@@ -29,8 +29,8 @@ class Migration(migrations.Migration):
             name='shift',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='shifts.shift'),
         ),
-        migrations.AddConstraint(
-            model_name='usershift',
-            constraint=models.UniqueConstraint(fields=('user', 'date'), name='unique_user_date'),
-        ),
+        #migrations.AddConstraint(
+        #    model_name='usershift',
+        #   constraint=models.UniqueConstraint(fields=('user', 'date'), name='unique_user_date'),
+        #),
     ]
