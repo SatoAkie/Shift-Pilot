@@ -1,5 +1,14 @@
 {% extends "base.html" %} 
 {% load add_class %}
+
+{% block extra_css %}
+<style>
+.return-link:hover {
+    text-decoration: underline !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="d-flex justify-content-center">
@@ -40,7 +49,7 @@
             </form>
 
             <div class="text-center mt-3">
-                <a href="{% url 'accounts:signup' %}" class="text-black">アカウント登録</a>
+                <a href="{% url 'accounts:signup' %}" class="text-primary text-decoration-none return-link">アカウント登録</a>
             </div>
         </div>
     </div>

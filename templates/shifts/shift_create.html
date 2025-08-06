@@ -6,13 +6,17 @@
     background-color: #dee2e6;
 }
 .gray-btn:hover,
-.gray-btn:focus,
-.gray-btn:active {
-    background-color: #dee2e6 !important;
-    color: #000 !important;
-    border: 1px solid #ccc;
-    box-shadow: none;
+.gray-btn:focus {
+    background-color: #adb5bd;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2); 
+    color: #000;
+    border: 1px solid #bbb;
 }
+
+.return-link:hover {
+  text-decoration: underline !important;
+}
+
 .shift-cell {
     background-color: #e3f2fd !important;
     border: 1px solid #dee2e6 !important;
@@ -42,6 +46,11 @@ td.username-cell {
     height: 70px;
     white-space: nowrap;
 }
+
+.table td {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
 </style>
 {% endblock %}
 
@@ -68,12 +77,12 @@ td.username-cell {
       <div class="mt-5">
         <ul class="list-unstyled">
           <li>
-            <a href="{% url 'shifts:shift_pattern' %}" class="text-black d-inline-block mb-3">
+            <a href="{% url 'shifts:shift_pattern' %}" class="text-primary text-decoration-none return-link d-inline-block mb-3">
               シフトパターン登録
             </a>
           </li>
           <li>
-            <a href="{% url 'shifts:pattern_assignment_summaries' %}" class="text-black d-inline-block mb-3">
+            <a href="{% url 'shifts:pattern_assignment_summaries' %}" class="text-primary text-decoration-none return-link d-inline-block mb-3">
               シフトのバランスチェック
             </a>
           </li>
@@ -162,10 +171,9 @@ td.username-cell {
           </tbody>
         </table>
       </div>
+        <div class="d-flex justify-content-between align-items-start mt-4">
 
-      <div class="mt-5">
-        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-        <table class="table table-bordered w-50">
+        <table class="table table-bordered me-4" style="width: auto;">
           <tbody>
             {% for pattern in patterns %}
               <tr>
@@ -175,14 +183,12 @@ td.username-cell {
             {% endfor %}
           </tbody>
         </table>
-      </div>
 
-      <div class="d-flex justify-content-end mt-4">
         <form method="POST" action="{% url 'shifts:shifts' %}?month={{ current_month|date:'Y-m' }}">
           {% csrf_token %}
           <input type="hidden" name="overwrite" value="true">
           <input type="hidden" name="month" value="{{ current_month|date:'Y-m' }}">
-          <button type="submit" class="btn gray-btn text-dark">シフト自動作成</button>
+          <button type="submit" class="btn gray-btn text-dark">シフトを自動作成する</button>
         </form>
       </div>
     </div>

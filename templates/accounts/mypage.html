@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% load add_class %}
 
+{% block extra_css %}
+<style>
+.return-link:hover {
+    text-decoration: underline !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <h5 class="text-secondary ms-1 mb-4">マイページ</h5>
@@ -39,10 +47,10 @@
             <p><strong>メールアドレス：</strong>{{ user.email }}</p>
             <p>
                 <strong>パスワード：</strong>
-                <a href="{% url 'accounts:password_change' %}" class="text-black" >パスワード変更</a>
+                <a href="{% url 'accounts:password_change' %}" class="text-primary text-decoration-none return-link" >パスワード変更</a>
             </p>
             <p>
-                <a href="{% url 'accounts:user_update' %}" class="text-black" >アカウント情報変更</a>
+                <a href="{% url 'accounts:user_update' %}" class="text-primary text-decoration-none return-link" >アカウント情報変更</a>
             </p>
         </div>
     </div>
