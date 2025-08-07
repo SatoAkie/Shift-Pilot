@@ -35,35 +35,58 @@
                 {% if patterns|length == 0 %}
                 <tr>
                     <td style="width: 10%;">
-                        <input type="text" name="pattern_name_1" value="" class="form-control text-center" placeholder="パターン名">
+                        <input type="text" name="pattern_name_1" value="" class="form-control text-center" placeholder="パターン名" required>
                     </td>
                     <td style="width: 30%;">
                         <div class="d-flex justify-content-center align-items-center gap-2">
-                            <input type="time" name="start_time_1" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始">
+                            <input type="time" name="start_time_1" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始" required>
                             <span class="mx-1">～</span>
-                            <input type="time" name="end_time_1" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了">
+                            <input type="time" name="end_time_1" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了" required>
                         </div>
                     </td>
                     <td style="width: 10%;">
-                        <input type="number" name="max_people_1" value="" class="form-control text-center" min="1" placeholder="人数">
+                        <input type="number" name="max_people_1" value="" class="form-control text-center" min="1" placeholder="人数" required>
                     </td>
                 </tr>
                 {% endif %}
                 {% for pattern in patterns %}
                 <tr>
                     <td style="width: 10%;">
-                        <input type="text" name="pattern_name_{{ forloop.counter }}" value="{{ pattern.pattern_name }}" class="form-control text-center">
+                        <input type="text"
+                               name="pattern_name_{{ forloop.counter }}"
+                               value="{{ pattern.pattern_name }}"
+                               class="form-control text-center"
+                               placeholder="パターン名"
+                               required>
                     </td>
                     <td style="width: 30%;">
                         <div class="d-flex justify-content-center align-items-center gap-2">
-                            <input type="time" name="start_time_{{ forloop.counter }}" value="{{ pattern.start_time|time:'H:i' }}" class="form-control text-center" style="width: 6rem;">
+                            <input type="time"
+                                   name="start_time_{{ forloop.counter }}"
+                                   value="{{ pattern.start_time|time:'H:i' }}"
+                                   class="form-control text-center"
+                                   style="width: 6rem;"
+                                   required>
                             <span class="mx-1">～</span>
-                            <input type="time" name="end_time_{{ forloop.counter }}" value="{{ pattern.end_time|time:'H:i' }}" class="form-control text-center" style="width: 6rem;">
+                            <input type="time"
+                                   name="end_time_{{ forloop.counter }}"
+                                   value="{{ pattern.end_time|time:'H:i' }}"
+                                   class="form-control text-center"
+                                   style="width: 6rem;"
+                                   required>
                         </div>
                     </td>
                     <td style="width: 10%;">
-                        <input type="number" name="max_people_{{ forloop.counter }}" value="{{ pattern.max_people }}" class="form-control text-center" min="1">
-                        <input type="hidden" name="id_{{ forloop.counter }}" value="{{ pattern.id }}">
+                        <input type="number"
+                               name="max_people_{{ forloop.counter }}"
+                               value="{{ pattern.max_people }}"
+                               class="form-control text-center"
+                               min="1"
+                               placeholder="人数"
+                               required>
+                        <input type="hidden" 
+                               name="id_{{ forloop.counter }}" 
+                               value="{{ pattern.id }}">
                     </td>
                 </tr>
                 {% endfor %}
@@ -100,17 +123,17 @@ document.getElementById('add-row-btn').addEventListener('click', function () {
     const row = document.createElement('tr');
     row.innerHTML = `
         <td style="width: 10%;">
-            <input type="text" name="pattern_name_${rowCount}" value="" class="form-control text-center" placeholder="パターン名">
+            <input type="text" name="pattern_name_${rowCount}" value="" class="form-control text-center" placeholder="パターン名" required>
         </td>
         <td style="width: 30%;">
             <div class="d-flex justify-content-center align-items-center gap-2">
-                <input type="time" name="start_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始">
+                <input type="time" name="start_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始" required>
                 <span class="mx-1">～</span>
-                <input type="time" name="end_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了">
+                <input type="time" name="end_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了" required>
             </div>
         </td>
         <td style="width: 10%;">
-            <input type="number" name="max_people_${rowCount}" value="" class="form-control text-center" min="1" placeholder="人数">
+            <input type="number" name="max_people_${rowCount}" value="" class="form-control text-center" min="1" placeholder="人数" required>
         </td>
     `;
     tbody.appendChild(row);

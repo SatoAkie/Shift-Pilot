@@ -38,15 +38,14 @@ td.shift-cell {
     overflow: hidden;
 }
 td.username-cell {
-    writing-mode: horizontal-tb !important;
-    text-align: center;
-    vertical-align: middle;
+    text-align: center !important;
+    vertical-align: middle !important;
     font-weight: bold;
     padding: 4px;
     height: 70px;
     white-space: nowrap;
+    display: table-cell;
 }
-
 .table td {
   padding-left: 1.5rem;
   padding-right: 1.5rem;
@@ -98,15 +97,23 @@ td.username-cell {
       </div>
 
       <div class="table-responsive">
+        <p class="text-dark small mb-2" style="font-size: 0.95rem;">
+          各日のチェックボックスにチェックを入れると、その日の全員のシフトが「休」になります。
+        </p>
         <table class="table table-bordered text-center align-middle">
           <thead class="table-light">
-            <tr>
-              <th>名前</th>
-              {% for day in calendar_days %}
-                <th>{{ day.day }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
+          <tr>
+            <th></th>
+            {% for day in calendar_days %}
+              <th>
+                {{ day.day }}<br>
+                <small>{{ day|date:"(D)" }}</small><br>
+                <input type="checkbox" class="rest-day-checkbox" data-date="{{ day|date:'Y-m-d' }}">
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+
           <tbody>
             {% for user in users %}
               <tr>
@@ -188,7 +195,7 @@ td.username-cell {
           {% csrf_token %}
           <input type="hidden" name="overwrite" value="true">
           <input type="hidden" name="month" value="{{ current_month|date:'Y-m' }}">
-          <button type="submit" class="btn gray-btn text-dark">シフトを自動作成する</button>
+          <button type="submit" class="btn btn-lg gray-btn text-dark">シフトを自動作成する</button>
         </form>
       </div>
     </div>
@@ -198,18 +205,13 @@ td.username-cell {
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
     const selects = document.querySelectorAll('select[data-user-id][data-date]');
     selects.forEach(select => {
       select.addEventListener('change', function () {
         const userId = this.dataset.userId;
         const date = this.dataset.date;
         const patternId = this.value;
-
-        console.log("🔼 送信データ:", {
-          user_id: userId,
-          date: date,
-          pattern_id: patternId
-        });
 
         fetch("{% url 'shifts:update_user_shift' %}", {
           method: 'POST',
@@ -232,6 +234,24 @@ td.username-cell {
         .catch(error => {
           alert('通信エラーが発生しました');
           console.error(error);
+        });
+      });
+    });
+
+    document.querySelectorAll('.rest-day-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', function () {
+        const targetDate = this.dataset.date;
+        const selects = document.querySelectorAll(`select[data-date='${targetDate}']`);
+
+        selects.forEach(select => {
+          if (this.checked) {
+            select.value = ''; 
+          } else {
+            select.selectedIndex = -1; 
+          }
+
+          const event = new Event('change', { bubbles: true });
+          select.dispatchEvent(event);
         });
       });
     });

@@ -95,8 +95,14 @@ def shift_request_view(request):
     if request.method == "POST":
         selected_dates = request.POST.getlist("selected_dates")
         if not selected_dates:
-            messages.error(request, "日付を選択してください")
-            return redirect('shifts:shift_request')
+            has_comment = any(
+                request.POST.get(f"comment_{d.strftime('%Y-%m-%d')}", "").strip()
+                for d in calendar_days
+            )
+            if not has_comment:
+                messages.error(request, "日付を選択するか、コメントを入力してください。")
+                return redirect('shifts:shift_request')
+
         
         for date_str in [d.strftime('%Y-%m-%d') for d in calendar_days]:
             day = date.fromisoformat(date_str)
@@ -158,21 +164,15 @@ def shift_pattern_view(request):
                 'max_people': max_people_raw,
             }
 
-            if not (name and start and end and max_people_raw):
-                error_message = 'すべての項目を入力してください'
-            else:
-                try:
-                    pattern_data['max_people'] = int(max_people_raw)
-                except ValueError:
-                        error_message = '人数は整数で入力してください'
+            # if not (name and start and end and max_people_raw):
+            #     error_message = 'すべての項目を入力してください'
+            # else:
+            #     try:
+            #         pattern_data['max_people'] = int(max_people_raw)
+            #     except ValueError:
+            #             error_message = '人数は整数で入力してください'
             
-            pattern_list.append(pattern_data)
-
-        if error_message:
-            return render(request, 'shifts/shift_pattern.html', {
-                                'patterns': pattern_list,
-                                'error_message': error_message
-                            })
+            # pattern_list.append(pattern_data)
 
         for data in pattern_list:
             if data['id']:
@@ -506,14 +506,14 @@ def update_user_shift(request):
                 defaults={
                     'shift': shift,
                     'is_manual': True,
-                    'is_error': False if shift else True
+                    'is_error': False 
                 }
             )
 
             if not created:
                 user_shift.shift = shift
                 user_shift.is_manual = True
-                user_shift.is_error = False if shift else True
+                user_shift.is_error = False 
                 user_shift.save()
 
             return JsonResponse({'success': True})
