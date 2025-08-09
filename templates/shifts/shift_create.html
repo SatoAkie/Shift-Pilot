@@ -137,13 +137,14 @@ td.username-cell {
                       {% endwith %}
 
                       <select 
-                          class="form-select form-select-sm
-                            {% if us.shift is None and us.is_error %} border-danger
-                            {% elif us.shift is None %} text-secondary
-                            {% endif %}"
-                          data-user-id="{{ user.id }}"
-                          data-date="{{ day|date:'Y-m-d'}}"
-                          data-shift-id="{{ us.shift.id|default:'' }}">
+                        class="form-select form-select-sm
+                          {% if us.shift is None and us.is_error %} border-danger
+                          {% endif %}
+                          {% if error_dict|get_item:user.id|get_item:day.day %} border-danger{% endif %}"
+                        data-user-id="{{ user.id }}"
+                        data-date="{{ day|date:'Y-m-d'}}"
+                        data-shift-id="{{ us.shift.id|default:'' }}">
+
 
                           
                           {% if us.shift %}
@@ -191,10 +192,11 @@ td.username-cell {
           </tbody>
         </table>
 
-        <form method="POST" action="{% url 'shifts:shifts' %}?month={{ current_month|date:'Y-m' }}">
+        <form id="auto-assign-form" method="POST" action="{% url 'shifts:shifts' %}?month={{ current_month|date:'Y-m' }}">
           {% csrf_token %}
           <input type="hidden" name="overwrite" value="true">
           <input type="hidden" name="month" value="{{ current_month|date:'Y-m' }}">
+          <div id="rest-days-container"></div>
           <button type="submit" class="btn btn-lg gray-btn text-dark">シフトを自動作成する</button>
         </form>
       </div>
@@ -204,62 +206,121 @@ td.username-cell {
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    const selects = document.querySelectorAll('select[data-user-id][data-date]');
-    selects.forEach(select => {
-      select.addEventListener('change', function () {
-        const userId = this.dataset.userId;
-        const date = this.dataset.date;
-        const patternId = this.value;
+  const selects = document.querySelectorAll('select[data-user-id][data-date]');
+  selects.forEach(select => {
+    select.addEventListener('change', function () {
+      const userId = this.dataset.userId;
+      const date = this.dataset.date;
+      const patternId = this.value;
 
-        fetch("{% url 'shifts:update_user_shift' %}", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            date: date,
-            pattern_id: patternId,
-          })
+      const label = this.options[this.selectedIndex]?.textContent.trim() || '';
+      if (!patternId) {
+        if (label === '休') {
+          this.classList.remove('border-danger'); 
+        } else {
+          this.classList.add('border-danger');   
+        }
+      } else {
+        this.classList.remove('border-danger');
+      }
+      fetch("{% url 'shifts:update_user_shift' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          date: date,
+          pattern_id: patternId,
         })
-        .then(response => response.json())
-        .then(data => {
-          if (!data.success) {
-            alert('保存に失敗しました：' + (data.error || '不明なエラー'));
-          }
-        })
-        .catch(error => {
-          alert('通信エラーが発生しました');
-          console.error(error);
-        });
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (!data.success) {
+          alert('保存に失敗しました：' + (data.error || '不明なエラー'));
+        } else {
+          this.classList.remove('border-danger');
+        }
+      })
+      .catch(error => {
+        alert('通信エラーが発生しました');
+        console.error(error);
       });
-    });
-
-    document.querySelectorAll('.rest-day-checkbox').forEach(checkbox => {
-      checkbox.addEventListener('change', function () {
-        const targetDate = this.dataset.date;
-        const selects = document.querySelectorAll(`select[data-date='${targetDate}']`);
-
-        selects.forEach(select => {
-          if (this.checked) {
-            select.value = ''; 
-          } else {
-            select.selectedIndex = -1; 
-          }
-
-          const event = new Event('change', { bubbles: true });
-          select.dispatchEvent(event);
-        });
-      });
-    });
-
-    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-    popoverTriggerList.forEach(function (el) {
-      new bootstrap.Popover(el);
     });
   });
+
+  document.querySelectorAll('.rest-day-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function () {
+      const date = this.dataset.date;
+      const checked = this.checked;
+
+      fetch("{% url 'shifts:toggle_all_rest' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken
+        },
+        body: JSON.stringify({
+          date: date,
+          checked: checked
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok) {
+          document.querySelectorAll(`select[data-date="${date}"]`).forEach(sel => {
+            if (checked) {
+              const restOption = Array.from(sel.options).find(
+                o => o.value === '' && o.textContent.trim() === '休'
+              );
+              if (restOption) {
+                restOption.selected = true;
+              } else {
+                sel.value = ''; 
+              }
+              sel.classList.remove("border-danger");
+            } else {
+              const blankOption = Array.from(sel.options).find(
+                o => o.value === '' && o.textContent.trim() === ''
+              );
+              if (blankOption) {
+                blankOption.selected = true;
+              } else {
+                sel.selectedIndex = -1;
+              }
+            }
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          });
+        } else {
+          alert("更新に失敗しました: " + data.error);
+        }
+      })
+      .catch(err => {
+        alert("通信エラーが発生しました");
+        console.error(err);
+      });
+    });
+  });
+
+  const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+  popoverTriggerList.forEach(function (el) {
+    new bootstrap.Popover(el);
+  });
+
+  document.getElementById('auto-assign-form').addEventListener('submit', function (e) {
+    const container = document.getElementById('rest-days-container');
+    container.innerHTML = '';
+    document.querySelectorAll('.rest-day-checkbox:checked').forEach(cb => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'all_user_rest_days[]';
+      inp.value = cb.dataset.date; 
+      container.appendChild(inp);
+    });
+  });
+});
 </script>
 {% endblock %}

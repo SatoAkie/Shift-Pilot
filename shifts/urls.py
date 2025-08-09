@@ -11,4 +11,5 @@ urlpatterns = [
     path('create/', views.shift_create_view, name='shift_create'),
     path('assign/', views.auto_assign_shifts, name='shifts'),
     path('update-user-shift/', views.update_user_shift, name='update_user_shift'), 
+    path("toggle_all_rest/", views.toggle_all_rest, name="toggle_all_rest"),
 ]

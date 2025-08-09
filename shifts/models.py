@@ -76,3 +76,14 @@ class PatternAssignmentSummary(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.pattern} ({self.summary_year}/{self.summary_month}): {self.assignment_count}回"
+
+class AllUserRestDay(models.Model):
+    date = models.DateField()
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ('date', 'team')
+
+    def __str__(self):
+        return f"{self.date} - {self.team.name}（全員休み）"

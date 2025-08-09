@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from datetime import date, timedelta, datetime
 import calendar, json
-from .models import ShiftRequest, ShiftPattern, Shift, UserShift, PatternAssignmentSummary,User
+from django.db.models import Count, Q  
+from .models import ShiftRequest, ShiftPattern, Shift, UserShift, PatternAssignmentSummary,User,AllUserRestDay
 from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
 from calendar import Calendar,monthrange
@@ -10,6 +12,7 @@ from .utils import assign_shifts
 from django.http import JsonResponse
 from django.urls import reverse
 from django.contrib import messages
+from django.utils.dateparse import parse_date
 
 @login_required
 def home(request):
@@ -408,7 +411,11 @@ def auto_assign_shifts(request):
         ).delete()
         
         shift_requests = {}
-        for req in ShiftRequest.objects.filter(date__range=(first_day, last_day), is_day_off=True):
+        for req in ShiftRequest.objects.filter(
+            user__team=team,
+            date__range=(first_day, last_day),
+            is_day_off=True
+        ):
             shift_requests.setdefault(req.user_id, set()).add(req.date)
 
         valid_shifts = [s for s in shifts if s.pattern is not None]
@@ -433,7 +440,63 @@ def auto_assign_shifts(request):
             if (us.user.id, us.date) not in existing_user_date_pairs
         ]
 
+        # POSTされた全休日リスト（"YYYY-MM-DD" 形式の文字列）を取得
+        rest_days = request.POST.getlist('all_user_rest_days[]')
+
+        # 既存の指定を削除（この月・チーム分）
+        AllUserRestDay.objects.filter(
+            date__range=(first_day, last_day),
+            team=team
+        ).delete()
+
+        # 新しい全休日を保存
+        for rest_day_str in rest_days:
+            try:
+                rest_date = datetime.strptime(rest_day_str, "%Y-%m-%d").date()
+                AllUserRestDay.objects.create(date=rest_date, team=team)
+            except ValueError:
+                continue  # 無効な日付文字列はスキップ
+
+
         UserShift.objects.bulk_create(new_user_shifts)
+
+        all_user_rest_days = set(
+            AllUserRestDay.objects.filter(
+                date__range=(first_day, last_day),
+                team=team
+            ).values_list('date', flat=True)
+        )
+
+        total_users = users.count()
+        if total_users == 0:
+            error_dates = []
+        else:
+            day_stats = (
+                UserShift.objects
+                .filter(date__range=(first_day, last_day), user__in=users)
+                .values('date')
+                .annotate(
+                    total=Count('id'),
+                    rest_ok=Count('id', filter=Q(shift__isnull=True, is_error=False)),
+                    any_work=Count('id', filter=Q(shift__isnull=False)),
+                )
+            )
+
+            error_dates = [
+                row['date']
+                for row in day_stats
+                if row['total'] == total_users
+                and row['rest_ok'] == total_users
+                and row['date'] not in all_user_rest_days
+            ]
+
+        if error_dates:
+            UserShift.objects.filter(date__in=error_dates, user__in=users).update(is_error=True)
+            messages.error(
+                request,
+                "一部の日が全員休みになっています。赤枠で表示された部分を手動で入力してください。"
+            )
+
 
         PatternAssignmentSummary.objects.filter(
             user__in=users,
@@ -516,9 +579,68 @@ def update_user_shift(request):
                 user_shift.is_error = False 
                 user_shift.save()
 
+            team_users = User.objects.filter(team=user.team)
+            total_users = team_users.count()
+          
+            qs = UserShift.objects.filter(date=date_obj, user__team=user.team)
+            total = qs.count()
+            any_work = qs.filter(shift__isnull=False).exists()
+            rest_all = qs.filter(shift__isnull=True).count() 
+
+            is_intentional_all_rest = AllUserRestDay.objects.filter(
+                date=date_obj, team=user.team
+            ).exists()
+
+            if any_work or is_intentional_all_rest:
+   
+                qs.filter(is_error=True).update(is_error=False)
+            else:
+                if total_users > 0 and total == total_users and rest_all == total_users:
+                    qs.update(is_error=True)
+                else:
+                    qs.filter(is_error=True).update(is_error=False)
+
             return JsonResponse({'success': True})
 
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
     return JsonResponse({'success': False, 'error': 'POSTのみ対応'}, status=405)
+
+@require_POST
+def toggle_all_rest(request):
+    try:
+        payload = json.loads(request.body)
+        date_str = payload.get("date")
+        checked = bool(payload.get("checked"))
+        team = request.user.team
+
+        d = parse_date(date_str)
+        if not d:
+            return JsonResponse({"ok": False, "error": "invalid date"}, status=400)
+
+        qs = UserShift.objects.filter(date=d, user__team=team)
+
+        if checked:
+            # 意図的に全休にする → 記録 & 全員休（エラー解除）
+            AllUserRestDay.objects.get_or_create(date=d, team=team)
+            qs.update(shift=None, is_error=False)
+        else:
+            # 意図的全休の解除
+            AllUserRestDay.objects.filter(date=d, team=team).delete()
+
+            # その日の状態を見て is_error を再判定
+            total_users = User.objects.filter(team=team).count()
+            total = qs.count()
+            any_work = qs.filter(shift__isnull=False).exists()
+
+            if total_users > 0 and total == total_users and not any_work:
+                # 全員休み（意図せず）→ エラー付与
+                qs.update(is_error=True)
+            else:
+                # それ以外 → エラー解除
+                qs.update(is_error=False)
+
+        return JsonResponse({"ok": True})
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)

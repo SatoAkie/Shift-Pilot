@@ -1,5 +1,14 @@
 {% extends "base.html" %}
 {% load add_class %}
+
+{% block extra_css %}
+<style>
+.return-link:hover {
+    text-decoration: underline !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <h5 class="text-secondary ms-1 mb-4">新規アカウント登録</h5>
@@ -62,7 +71,7 @@
             </form>
 
             <div class="text-center mt-3">
-                <a href="{% url 'accounts:login' %}" class="text-black">ログイン画面へ戻る</a>
+                <a href="{% url 'accounts:login' %}" class="text-primary text-decoration-none return-link">ログイン画面へ戻る</a>
             </div>
         </div>
     </div>
