@@ -20,6 +20,11 @@
   white-space: nowrap !important;
   margin: 0 auto !important; 
 }
+
+.shift-table{
+  table-layout: fixed !important;
+  width: 100%;
+}
 </style>
 
 <div class="container mt-4">
@@ -65,9 +70,9 @@
                                     {% endif %}
                                 {% endfor %}
                             {% elif error_dict|get_item:user.id and day.day in error_dict|get_item:user.id %}
-                                <span class="text-danger">未</span>
+                                <span class="shift-label text-danger">未</span>
                             {% else %}
-                                <span class="text-secondary">休</span>
+                                <span class="shift-label text-secondary">休</span>
                             {% endif %}
                      {% endwith %}
                     </td>
