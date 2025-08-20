@@ -40,7 +40,7 @@
     </div>
 
     <div class="table-responsive">
-        <table class="table table-bordered text-center align-middle">
+        <table class="table table-bordered text-center align-middle shift-table">
             <thead class="table-light">
                 <tr>
                     <th></th>
@@ -59,7 +59,9 @@
                              {% if pid %}
                                 {% for pattern in patterns %}
                                     {% if pattern.id == pid %}
-                                        {{ pattern.pattern_name }}
+                                        <span class="shift-label" title="{{ pattern.pattern_name }}">
+                                            {{ pattern.pattern_name }}
+                                        </span>
                                     {% endif %}
                                 {% endfor %}
                             {% elif error_dict|get_item:user.id and day.day in error_dict|get_item:user.id %}
