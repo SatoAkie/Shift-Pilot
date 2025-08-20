@@ -6,6 +6,7 @@
   background-color: #e3f2fd !important;
   font-size: 0.85rem;         
   padding: 4px 6px;
+  max-width: 100px;
 
   height: 70px !important;        
   max-height: 70px !important;   
@@ -15,8 +16,7 @@
 }
 
 .table.shift-table td.shift-td .shift-label {
-  display: block !important;
-  max-width: 6ch !important;             
+  display: block !important;          
   overflow: hidden !important;
   text-overflow: ellipsis !important; 
   line-height: 70px !important;     
@@ -28,6 +28,16 @@
 .shift-table{
   table-layout: fixed !important;
   width: 100%;
+}
+
+.table.shift-table td.user-name,
+.table.shift-table th.user-name {
+  writing-mode: horizontal-tb !important; 
+  white-space: nowrap !important;
+  text-align: center;
+  vertical-align: middle;              
+  padding: 4px 8px;
+  width: 120px;
 }
 </style>
 
@@ -61,7 +71,7 @@
             <tbody>
                 {% for user in users %}
                 <tr>
-                    <td>{{ user.name }}</td>
+                    <td class="user-name">{{ user.name }}</td>
                     {% for day in calendar_days %}
                     <td class="shift-td">
                         {% with pid=shift_dict|get_item:user.id|get_item:day.day %}
