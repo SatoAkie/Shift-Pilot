@@ -2,8 +2,7 @@
 {% load extras %}
 {% block content %}
 <style>
-/* TEST-CSS-20250820 */
-.shift-td {
+.table.shift-table td.shift-td {
   background-color: #e3f2fd !important;
   white-space: nowrap;         
   max-width: 100px;            
@@ -11,9 +10,11 @@
   text-overflow: ellipsis;     
   font-size: 0.85rem;         
   padding: 4px 6px;
+  height: 70px;  
+  vertical-align: middle; 
 }
 
-.shift-td .shift-label {
+.table.shift-table td.shift-td .shift-label {
   display: block !important;
   max-width: 6ch !important;             
   overflow: hidden !important;
