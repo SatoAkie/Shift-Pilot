@@ -167,7 +167,8 @@ def shift_pattern_view(request):
                 'max_people': max_people_raw,
             }
 
-            # if not (name and start and end and max_people_raw):
+            if not (name and start and end and max_people_raw):
+                continue
             #     error_message = 'すべての項目を入力してください'
             # else:
             #     try:
@@ -175,7 +176,7 @@ def shift_pattern_view(request):
             #     except ValueError:
             #             error_message = '人数は整数で入力してください'
             
-            # pattern_list.append(pattern_data)
+            pattern_list.append(pattern_data)
 
         for data in pattern_list:
             if data['id']:
