@@ -203,6 +203,15 @@ def shift_pattern_view(request):
     })
 
 @login_required
+def delete_pattern_view(request,pattern_id):
+    pattern = get_object_or_404(ShiftPattern, id=pattern_id, team=request.user.team)
+
+    pattern.delete()
+    messages.success(request, f'シフトパターン「{pattern.pattern_name}」を削除しました')
+    return redirect('shifts:shift_pattern')
+
+
+@login_required
 def pattern_assignment_summary_view(request):
     today = date.today()
     month_param = request.GET.get('month')
