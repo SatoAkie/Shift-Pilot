@@ -22,6 +22,9 @@
             color: blue;
 
         }
+        .link:hover {
+            text-decoration: underline !important;
+        }
         button{
             display: inline-block;
             font-size: 20px;
@@ -43,10 +46,10 @@
         <p>従業員ごとの担当回数を見える化し、偏りのないシフトを実現します。</p>
         <p>作成者と従業員の双方にとって、最適なシフト環境を提供します。</p>
 
-        <a href="{% static 'Shift_Pilot_企画書.pdf' %}" class="link">企画書</a>
-        <a href="{% static 'Shift_Pilot_画面遷移図.svg'%}" class="link">画面遷移図</a>
-        <a href="{% static 'Shift_Pilot_ER図.svg'%}" class="link">ER図</a>
-        <br><button onclick="location.href='{% url 'accounts:login' %}'">このアプリにアクセス</button><br>
+        <a href="{% static 'Shift_Pilot_企画書.pdf' %}" class="text-primary text-decoration-none link">企画書</a>
+        <a href="{% static 'Shift_Pilot_画面遷移図.svg'%}" class="text-primary text-decoration-none link">画面遷移図</a>
+        <a href="{% static 'Shift_Pilot_ER図.svg'%}" class="text-primary text-decoration-none link">ER図</a>
+        <br><button class="btn btn-primary px-5" onclick="location.href='{% url 'accounts:login' %}'">このアプリにアクセス</button><br>
     </div>
 </body>
 </html>
