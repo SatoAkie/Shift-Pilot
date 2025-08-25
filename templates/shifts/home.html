@@ -40,6 +40,11 @@
   padding: 4px 8px;
   min-width: 140px; 
 }
+.shift-label.text-muted {
+    font-style: italic;
+    border-radius: 4px;
+    padding: 2px 4px;
+}
 </style>
 
 <div class="container mt-4">
@@ -76,7 +81,9 @@
                     {% for day in calendar_days %}
                     <td class="shift-td">
                         {% with pid=shift_dict|get_item:user.id|get_item:day.day %}
-                             {% if pid %}
+                             {% if pid == "deleted" %}
+                                <span class="shift-label text-muted">削除済みパターン</span>
+                            {% elif pid %}
                                 {% for pattern in patterns %}
                                     {% if pattern.id == pid %}
                                         <span class="shift-label" title="{{ pattern.pattern_name }}">

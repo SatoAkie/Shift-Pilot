@@ -44,7 +44,10 @@ def home(request):
 
         if day in shift_dict[shift.user.id]:
             continue
-        shift_dict[shift.user.id][day] = shift.shift.pattern.id if shift.shift.pattern else ""
+        if shift.shift.pattern:
+            shift_dict[shift.user.id][day] = shift.shift.pattern.id
+        else:
+            shift_dict[shift.user.id][day] = "deleted"
 
 
 
