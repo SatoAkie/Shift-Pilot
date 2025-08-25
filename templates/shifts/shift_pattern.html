@@ -1,6 +1,35 @@
 {% extends "base.html" %}
 {% load extras %}
 {% block content %}
+
+<style>
+.pattern-input {
+  width: 12rem !important;
+}
+.time-input {
+  width: 6rem !important;
+}
+.number-input {
+  width: 9rem !important;
+}
+.table td, .table th {
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+}
+.d-flex.gap-2 {
+  gap: 0.25rem !important;
+}
+#pattern-table th:nth-child(2),
+#pattern-table td:nth-child(2) {
+  width: 280px;
+}
+#pattern-table th {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+</style>
+
+
 <div class="container mt-5">
     <h5 class="text-secondary ms-1 mb-4">シフトパターン登録</h5>
 
@@ -23,70 +52,80 @@
 
     <form method="POST">
         {% csrf_token %}
-        <table class="table table-borderless text-center align-middle" id="pattern-table">
+        <table class="table table-borderless text-center align-middle" id="pattern-table" style="width: 100%; max-width: 700px; margin: 0 auto;">
             <thead>
                 <tr>
-                    <th style="width: 10%;">パターン名</th>
-                    <th style="width: 30%;">勤務時間</th>
-                    <th style="width: 10%;">人数</th>
+                    <th>パターン名</th>
+                    <th>勤務時間</th>
+                    <th>人数</th>
+                    <th style="width: 10%;">削除</th>
                 </tr>
             </thead>
             <tbody id="pattern-table-body">
                 {% if patterns|length == 0 %}
                 <tr>
-                    <td style="width: 10%;">
-                        <input type="text" name="pattern_name_1" value="" class="form-control text-center" placeholder="パターン名" required>
+                    <td>
+                        <input type="text" name="pattern_name_1" value="" class="form-control text-center pattern-input" placeholder="パターン名" required>
                     </td>
-                    <td style="width: 30%;">
+                    <td>
                         <div class="d-flex justify-content-center align-items-center gap-2">
-                            <input type="time" name="start_time_1" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始" required>
+                            <input type="time" name="start_time_1" value="" class="form-control text-center time-input" style="width: 6rem;" placeholder="開始" required>
                             <span class="mx-1">～</span>
-                            <input type="time" name="end_time_1" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了" required>
+                            <input type="time" name="end_time_1" value="" class="form-control text-center time-input" style="width: 6rem;" placeholder="終了" required>
                         </div>
                     </td>
-                    <td style="width: 10%;">
-                        <input type="number" name="max_people_1" value="" class="form-control text-center" min="1" placeholder="人数" required>
+                    <td>
+                        <input type="number" name="max_people_1" value="" class="form-control text-center number-input" min="1" placeholder="人数" required>
                     </td>
+                    <td></td>
                 </tr>
                 {% endif %}
+
                 {% for pattern in patterns %}
                 <tr>
-                    <td style="width: 10%;">
+                    <td>
                         <input type="text"
                                name="pattern_name_{{ forloop.counter }}"
                                value="{{ pattern.pattern_name }}"
-                               class="form-control text-center"
+                               class="form-control text-center pattern-input"
                                placeholder="パターン名"
                                required>
                     </td>
-                    <td style="width: 30%;">
+                    <td>
                         <div class="d-flex justify-content-center align-items-center gap-2">
                             <input type="time"
                                    name="start_time_{{ forloop.counter }}"
                                    value="{{ pattern.start_time|time:'H:i' }}"
-                                   class="form-control text-center"
+                                   class="form-control text-center time-input"
                                    style="width: 6rem;"
                                    required>
                             <span class="mx-1">～</span>
                             <input type="time"
                                    name="end_time_{{ forloop.counter }}"
                                    value="{{ pattern.end_time|time:'H:i' }}"
-                                   class="form-control text-center"
+                                   class="form-control text-center time-input"
                                    style="width: 6rem;"
                                    required>
                         </div>
                     </td>
-                    <td style="width: 10%;">
+                    <td>
                         <input type="number"
                                name="max_people_{{ forloop.counter }}"
                                value="{{ pattern.max_people }}"
-                               class="form-control text-center"
+                               class="form-control text-center number-input"
                                min="1"
                                placeholder="人数"
                                required>
                         <input type="hidden" 
                                name="id_{{ forloop.counter }}" 
                                value="{{ pattern.id }}">
+                    </td>
+                    <td>
+
+                        <form method="post" action="{% url 'shifts:delete_pattern' pattern.id %}" onsubmit="return confirm('本当に削除しますか？');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">削除</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
@@ -122,18 +161,22 @@ document.getElementById('add-row-btn').addEventListener('click', function () {
 
     const row = document.createElement('tr');
     row.innerHTML = `
-        <td style="width: 10%;">
+        <td>
             <input type="text" name="pattern_name_${rowCount}" value="" class="form-control text-center" placeholder="パターン名" required>
         </td>
-        <td style="width: 30%;">
+        <td>
             <div class="d-flex justify-content-center align-items-center gap-2">
                 <input type="time" name="start_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始" required>
                 <span class="mx-1">～</span>
                 <input type="time" name="end_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了" required>
             </div>
         </td>
-        <td style="width: 10%;">
+        <td>
             <input type="number" name="max_people_${rowCount}" value="" class="form-control text-center" min="1" placeholder="人数" required>
+        </td>
+        <td>
+            <button type="button" class="btn btn-danger btn-sm" 
+                onclick="this.closest('tr').remove()">削除</button>
         </td>
     `;
     tbody.appendChild(row);
