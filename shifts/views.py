@@ -355,6 +355,9 @@ def shift_create_view(request):
 
         if us.shift is None and us.is_error:
             error_dict[us.user_id][us.date.day] = True
+        elif us.shift and us.shift.pattern is None:
+            error_dict[us.user_id][us.date.day] = True
+            shift_dict[us.user_id][us.date] = None
         else:
             error_dict[us.user_id][us.date.day] = False
 
@@ -367,6 +370,17 @@ def shift_create_view(request):
     for req in comment_requests:
         comment_dict[req.user.id][req.date.day] = req.comment
     
+    shifts = UserShift.objects.filter(shift__team=request.user.team)
+
+    error_flag = False
+    for us in shifts:
+        if us.shift and us.shift.pattern is None:  
+            error_flag = True
+
+    if error_flag:
+        messages.error(request, "削除されたシフトパターンが含まれています。再作成してください。")
+
+
     return render(request, 'shifts/shift_create.html',{
         'users': users,
         'current_month': current_date,
