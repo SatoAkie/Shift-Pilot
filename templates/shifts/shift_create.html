@@ -145,29 +145,27 @@ td.username-cell {
                         data-user-id="{{ user.id }}"
                         data-date="{{ day|date:'Y-m-d'}}"
                         data-shift-id="{{ us.shift.id|default:'' }}">
-
-
                           
                           {% if us.shift %}
+                              {# 勤務 #}
                               {% for pattern in patterns %}
-                                  <option value="{{ pattern.id }}"
-                                    {% if us.shift.pattern.id == pattern.id %}selected{% endif %}>
-                                    {{ pattern.pattern_name }}
-                                  </option>
+                                <option value="{{ pattern.id }}" {% if us.shift.pattern.id == pattern.id %}selected{% endif %}>
+                                  {{ pattern.pattern_name }}
+                                </option>
                               {% endfor %}
-                              <option value="">休</option>
-                          
+
                           {% elif us.is_error %}
-                              <option value="" selected></option> 
+                              {# 削除済み／割当不能 #}
+                              <option value="__ERROR__" selected></option>
                               {% for pattern in patterns %}
-                                  <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
+                                <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
                               {% endfor %}
-                              <option value="">休</option>
 
                           {% else %}
-                              <option value="" selected>休</option>
+                              {# 休み #}
+                              <option value="__REST__" selected>休</option>
                               {% for pattern in patterns %}
-                                  <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
+                                <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
                               {% endfor %}
                           {% endif %}
                       </select>
@@ -217,14 +215,14 @@ td.username-cell {
       const patternId = this.value;
 
       const label = this.options[this.selectedIndex]?.textContent.trim() || '';
-      if (!patternId) {
-        if (label === '休') {
-          this.classList.remove('border-danger'); 
-        } else {
-          this.classList.add('border-danger');   
-        }
+      if (patternId === '__REST__') {
+        this.classList.remove('border-danger');   
+      } else if (patternId === '__ERROR__') {
+        this.classList.add('border-danger');      
+      } else if (!patternId) {
+        this.classList.add('border-danger');      
       } else {
-        this.classList.remove('border-danger');
+        this.classList.remove('border-danger'); 
       }
       fetch("{% url 'shifts:update_user_shift' %}", {
         method: 'POST',
@@ -274,21 +272,25 @@ td.username-cell {
         if (data.ok) {
           document.querySelectorAll(`select[data-date="${date}"]`).forEach(sel => {
             if (checked) {
-              const restOption = Array.from(sel.options).find(
-                o => o.value === '' && o.textContent.trim() === '休'
-              );
-              if (restOption) {
+              const restOption = Array.from(sel.options).find(o => o.value === '__REST__');
+              const errorOption = Array.from(sel.options).find(o => o.value === '__ERROR__');
+
+              if (restOption && !sel.classList.contains("border-danger")) {
                 restOption.selected = true;
-              } else {
-                sel.value = ''; 
+              } else if (errorOption) {
+                errorOption.selected = true;
               }
-              sel.classList.remove("border-danger");
+
+              if (!sel.classList.contains("border-danger")) {
+                sel.classList.remove("border-danger");
+              }
+
             } else {
-              const blankOption = Array.from(sel.options).find(
-                o => o.value === '' && o.textContent.trim() === ''
+              const errorOption = Array.from(sel.options).find(
+                o => o.value === '__ERROR__'
               );
-              if (blankOption) {
-                blankOption.selected = true;
+              if (errorOption) {
+                errorOption.selected = true;
               } else {
                 sel.selectedIndex = -1;
               }

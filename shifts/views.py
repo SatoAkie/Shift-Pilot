@@ -357,7 +357,9 @@ def shift_create_view(request):
             error_dict[us.user_id][us.date.day] = True
         elif us.shift and us.shift.pattern is None:
             error_dict[us.user_id][us.date.day] = True
-            shift_dict[us.user_id][us.date] = None
+            us.is_error = True
+            us.shift = None 
+            shift_dict[us.user_id][us.date] = us
         else:
             error_dict[us.user_id][us.date.day] = False
 
@@ -370,7 +372,7 @@ def shift_create_view(request):
     for req in comment_requests:
         comment_dict[req.user.id][req.date.day] = req.comment
     
-    shifts = UserShift.objects.filter(shift__team=request.user.team)
+    shifts = UserShift.objects.filter(shift__team=request.user.team,date__range=(first_day, last_day))
 
     error_flag = False
     for us in shifts:
