@@ -81,6 +81,7 @@
                 </tr>
                 {% endif %}
 
+
                 {% for pattern in patterns %}
                 <tr>
                     <td>
@@ -122,10 +123,9 @@
                     </td>
                     <td>
 
-                        <form method="post" action="{% url 'shifts:delete_pattern' pattern.id %}" onsubmit="return confirm('本当に削除しますか？');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">削除</button>
-                        </form>
+                        <button type="submit" class="btn btn-danger btn-sm" formaction="{% url 'shifts:delete_pattern' pattern.id %}" formmethod="post"
+                            onclick="return confirm('本当に削除しますか？');">削除</button>
+                        {% csrf_token %}
                     </td>
                 </tr>
                 {% endfor %}
