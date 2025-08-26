@@ -3,6 +3,8 @@ from collections import defaultdict
 from datetime import datetime, date, timedelta
 from .models import UserShift, ShiftPattern, Shift
 
+TARGET_REST_DAYS = 8 
+
 def calculate_hours(start_time, end_time):
     total_minutes = (datetime.combine(date.today(), end_time) - datetime.combine(date.today(), start_time)).seconds // 60
     break_minutes = 60
@@ -35,11 +37,12 @@ def assign_shifts(users, shifts, shift_requests):
     # Shift を日付ごとにまとめる
     for shift in shifts:
         shift_map[shift.date].append(shift)
-
     all_dates = sorted(shift_map.keys())
+    users_list = list(users)
 
     # ① 希望休を先に反映
-    for user in users:
+    user_rest_count = {u.id: 0 for u in users_list} 
+    for user in users_list:
         for day in shift_requests.get(user.id, set()):
             assigned_pairs.append(UserShift(
                 user=user,
@@ -50,7 +53,59 @@ def assign_shifts(users, shifts, shift_requests):
             ))
             user_assigned_dates[user.id].add(day)
             user_shift_history[user.id][day] = '休'
+            user_rest_count[user.id] += 1
 
+    # 休みの補完（最低必要休 → 8日達成まで）
+    # 各日の総枠と最低必要休を計算
+    sum_capacity = {
+        day: sum((sh.pattern.max_people if sh.pattern else 0) for sh in shift_map[day])
+        for day in all_dates
+    }
+    min_rest_needed = {day: max(0, len(users_list) - sum_capacity[day]) for day in all_dates}
+
+    # 最低必要休を補完（希望休を除外し、休が少ない人を優先）
+    for day in all_dates:
+        need = min_rest_needed[day]
+        if need <= 0:
+            continue
+        candidates = [u for u in users_list
+                      if day not in user_assigned_dates[u.id]
+                      and day not in shift_requests.get(u.id, set())]
+        # 休が少ない人優先
+        candidates.sort(key=lambda u: (user_rest_count[u.id], len(user_assigned_dates[u.id])))
+        for u in candidates[:need]:
+            assigned_pairs.append(UserShift(user=u, shift=None, date=day,
+                                            is_manual=False, is_error=False))
+            user_assigned_dates[u.id].add(day)
+            user_shift_history[u.id][day] = '休'
+            user_rest_count[u.id] += 1
+
+    days_cycle = list(all_dates)
+    # 人ごとに休の少ない順で回す
+    for u in sorted(users_list, key=lambda x: user_rest_count[x.id]):
+        while user_rest_count[u.id] < TARGET_REST_DAYS:
+            placed = False
+            for day in days_cycle:
+                if day in user_assigned_dates[u.id]:
+                    continue
+                rests_today = sum(
+                1 for x in users_list
+                if user_shift_history[x.id].get(day) == '休'
+            )
+            # 全員休みにしない
+            if sum_capacity.get(day, 0) > 0 and rests_today + 1 >= len(users_list):
+                continue
+            
+            assigned_pairs.append(UserShift(user=u, shift=None, date=day,
+                                            is_manual=False, is_error=False))
+            user_assigned_dates[u.id].add(day)
+            user_shift_history[u.id][day] = '休'
+            user_rest_count[u.id] += 1
+            placed = True
+            break
+        if not placed:
+            break  
+        
     # ② 勤務を割り当てる
     for day in all_dates:
         shifts_today = shift_map[day]
@@ -60,10 +115,9 @@ def assign_shifts(users, shifts, shift_requests):
                 continue
 
             if assigned_count[day][pattern.id] >= pattern.max_people:
-                errors.append(f"{day.strftime('%m/%d')} の {pattern.pattern_name} は定員オーバーです")
                 continue
 
-            candidates = list(users)
+            candidates = list(users_list)
             random.shuffle(candidates)
             candidates.sort(key=lambda u: (user_pattern_count[u.id][pattern.id], len(user_assigned_dates[u.id])))
 
@@ -106,12 +160,46 @@ def assign_shifts(users, shifts, shift_requests):
                 if assigned_count[day][pattern.id] >= pattern.max_people:
                     break
 
-    # ③ 残り日をエラーまたは休みで補完
+
+        # 日ごとの空き枠有無を計算
+    day_has_free_capacity = {}
     for day in all_dates:
-        for user in users:
+        free = False
+        for sh in shift_map[day]:
+            pat = sh.pattern
+            if not pat:
+                continue
+            if assigned_count[day][pat.id] < pat.max_people:
+                free = True
+                break
+        day_has_free_capacity[day] = free
+
+    def user_can_take_any_shift(user, day):
+        week_start = day - timedelta(days=day.weekday())
+        if weekly_hours[user.id][week_start] >= 40:
+            return False
+        for sh in shift_map[day]:
+            pat = sh.pattern
+            if not pat:
+                continue
+            if assigned_count[day][pat.id] >= pat.max_people:
+                continue
+            if user_shift_history[user.id].get(day - timedelta(days=1)) == pat.pattern_name:
+                continue
+            if UserShift.objects.filter(user=user, shift=sh, is_manual=True).exists():
+                continue
+            return True
+        return False
+
+    # ③ 残り日をエラーまたは休みで補完（順序を微調整）
+    any_assignment_error = False
+
+    for day in all_dates:
+        for user in users_list:
             if day in user_assigned_dates[user.id]:
                 continue
 
+            # 直近5日がすべて勤務なら強制休み（通常休み扱い）
             consecutive_work_days = 0
             for i in range(1, 6):
                 d = day - timedelta(days=i)
@@ -119,30 +207,42 @@ def assign_shifts(users, shifts, shift_requests):
                 if pattern_name not in [None, '休']:
                     consecutive_work_days += 1
                 else:
-                    break  # 途中に休みがあればカウント中断
-
+                    break
             if consecutive_work_days >= 5:
-                assigned_pairs.append(UserShift(
-                    user=user,
-                    shift=None,
-                    date=day,
-                    is_manual=False,
-                    is_error=False  # 通常の休みとして扱う
-                ))
+                assigned_pairs.append(UserShift(user=user, shift=None, date=day,
+                                                is_manual=False, is_error=False))
                 user_shift_history[user.id][day] = '休'
                 user_assigned_dates[user.id].add(day)
+                user_rest_count[user.id] = user_rest_count.get(user.id, 0) + 1
                 continue
 
-            # 補完する休みは「エラー扱いにせず休みとして表示」
-            assigned_pairs.append(UserShift(
-                user=user,
-                shift=None,
-                date=day,
-                is_manual=False,
-                is_error=False  # ← すべて「正常な休み」として扱う
-            ))
+            # 容量満杯（空き枠なし） → 休（非エラー）
+            if not day_has_free_capacity.get(day, False):
+                assigned_pairs.append(UserShift(user=user, shift=None, date=day,
+                                                is_manual=False, is_error=False))
+                user_shift_history[user.id][day] = '休'
+                user_assigned_dates[user.id].add(day)
+                user_rest_count[user.id] = user_rest_count.get(user.id, 0) + 1
+                continue
+
+            # 個人規制で当日の全パターンに入れられない → 未（エラー）
+            week_start = day - timedelta(days=day.weekday())
+            if weekly_hours[user.id][week_start] >= 40 or not user_can_take_any_shift(user, day):
+                assigned_pairs.append(UserShift(user=user, shift=None, date=day,
+                                                is_manual=False, is_error=True))
+                user_shift_history[user.id][day] = '休'  # 非勤務として連勤カウントは切る
+                user_assigned_dates[user.id].add(day)
+                any_assignment_error = True
+                continue
+
+            # それ以外（補完休） → 休（非エラー）
+            assigned_pairs.append(UserShift(user=user, shift=None, date=day,
+                                            is_manual=False, is_error=False))
             user_shift_history[user.id][day] = '休'
             user_assigned_dates[user.id].add(day)
+            user_rest_count[user.id] = user_rest_count.get(user.id, 0) + 1
 
+    if any_assignment_error:
+        errors.append("勤務が一部割り当てられませんでした")
 
     return assigned_pairs, errors
