@@ -163,7 +163,7 @@ td.username-cell {
 
                           {% else %}
                               {# 休み #}
-                              <option value="__REST__" selected>休</option>
+                              <option value="" selected>休</option>
                               {% for pattern in patterns %}
                                 <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
                               {% endfor %}
@@ -215,7 +215,7 @@ td.username-cell {
       const patternId = this.value;
 
       const label = this.options[this.selectedIndex]?.textContent.trim() || '';
-      if (patternId === '__REST__') {
+      if (patternId === '') {
         this.classList.remove('border-danger');   
       } else if (patternId === '__ERROR__') {
         this.classList.add('border-danger');      
@@ -272,7 +272,7 @@ td.username-cell {
         if (data.ok) {
           document.querySelectorAll(`select[data-date="${date}"]`).forEach(sel => {
             if (checked) {
-              const restOption = Array.from(sel.options).find(o => o.value === '__REST__');
+              const restOption = Array.from(sel.options).find(o => o.value === '');
               const errorOption = Array.from(sel.options).find(o => o.value === '__ERROR__');
 
               if (restOption && !sel.classList.contains("border-danger")) {
