@@ -91,18 +91,19 @@ def assign_shifts(users, shifts, shift_requests):
                 rests_today = sum(
                 1 for x in users_list
                 if user_shift_history[x.id].get(day) == '休'
-            )
+                )
             # 全員休みにしない
-            if sum_capacity.get(day, 0) > 0 and rests_today + 1 >= len(users_list):
-                continue
+                if sum_capacity.get(day, 0) > 0 and rests_today + 1 >= len(users_list):
+                    continue
             
-            assigned_pairs.append(UserShift(user=u, shift=None, date=day,
-                                            is_manual=False, is_error=False))
-            user_assigned_dates[u.id].add(day)
-            user_shift_history[u.id][day] = '休'
-            user_rest_count[u.id] += 1
-            placed = True
-            break
+                assigned_pairs.append(UserShift(user=u, shift=None, date=day,
+                                                is_manual=False, is_error=False))
+                user_assigned_dates[u.id].add(day)
+                user_shift_history[u.id][day] = '休'
+                user_rest_count[u.id] += 1
+                placed = True
+                break
+
         if not placed:
             break  
         
