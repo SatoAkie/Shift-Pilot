@@ -581,8 +581,17 @@ def update_user_shift(request):
             user = get_object_or_404(User, pk=user_id)
 
             pattern = None
-            if pattern_id not in ("", None):
+            is_error = False
+
+            if pattern_id in ("", None):  
+                pattern = None
+                is_error = False
+            elif pattern_id == "__ERROR__":  
+                pattern = None
+                is_error = True
+            else:  
                 pattern = get_object_or_404(ShiftPattern, pk=pattern_id)
+                is_error = False
 
             shift = None
             if pattern:
@@ -598,14 +607,14 @@ def update_user_shift(request):
                 defaults={
                     'shift': shift,
                     'is_manual': True,
-                    'is_error': False 
+                    'is_error': is_error
                 }
             )
 
             if not created:
                 user_shift.shift = shift
                 user_shift.is_manual = True
-                user_shift.is_error = False 
+                user_shift.is_error = is_error
                 user_shift.save()
 
             team_users = User.objects.filter(team=user.team)
