@@ -89,10 +89,10 @@ def assign_shifts(users, shifts, shift_requests):
                 if day in user_assigned_dates[u.id]:
                     continue
                 rests_today = sum(
-                1 for x in users_list
-                if user_shift_history[x.id].get(day) == '休'
+                    1 for x in users_list
+                    if user_shift_history[x.id].get(day) == '休'
                 )
-            # 全員休みにしない
+                # 全員休みにしない
                 if sum_capacity.get(day, 0) > 0 and rests_today + 1 >= len(users_list):
                     continue
             
