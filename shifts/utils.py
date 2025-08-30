@@ -81,6 +81,7 @@ def assign_shifts(users, shifts, shift_requests):
             user_rest_count[u.id] += 1
 
     days_cycle = list(all_dates)
+    
     # 人ごとに休の少ない順で回す
     for u in sorted(users_list, key=lambda x: user_rest_count[x.id]):
         while user_rest_count[u.id] < TARGET_REST_DAYS:
@@ -95,17 +96,23 @@ def assign_shifts(users, shifts, shift_requests):
                 # 全員休みにしない
                 if sum_capacity.get(day, 0) > 0 and rests_today + 1 >= len(users_list):
                     continue
-            
-                assigned_pairs.append(UserShift(user=u, shift=None, date=day,
-                                                is_manual=False, is_error=False))
+
+                assigned_pairs.append(UserShift(
+                    user=u,
+                    shift=None,
+                    date=day,
+                    is_manual=False,
+                    is_error=False
+                ))
                 user_assigned_dates[u.id].add(day)
                 user_shift_history[u.id][day] = '休'
                 user_rest_count[u.id] += 1
                 placed = True
-                break
+                break  # ← for day
 
-        if not placed:
-            break  
+            if not placed:
+                break  # ← while
+
         
     # ② 勤務を割り当てる
     for day in all_dates:
