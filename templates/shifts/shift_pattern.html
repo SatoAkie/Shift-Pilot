@@ -65,17 +65,25 @@
                 {% if patterns|length == 0 %}
                 <tr>
                     <td>
-                        <input type="text" name="pattern_name_1" value="" class="form-control text-center pattern-input" placeholder="パターン名" required>
+                        <input type="text" name="pattern_name_1" value="" 
+                            class="form-control text-center pattern-input" 
+                            placeholder="パターン名" required>
                     </td>
                     <td>
                         <div class="d-flex justify-content-center align-items-center gap-2">
-                            <input type="time" name="start_time_1" value="" class="form-control text-center time-input" style="width: 6rem;" placeholder="開始" required>
+                            <input type="time" name="start_time_1" value="" 
+                                class="form-control text-center time-input" style="width: 6rem;" 
+                                placeholder="開始" required>
                             <span class="mx-1">～</span>
-                            <input type="time" name="end_time_1" value="" class="form-control text-center time-input" style="width: 6rem;" placeholder="終了" required>
+                            <input type="time" name="end_time_1" value="" 
+                                class="form-control text-center time-input" style="width: 6rem;" 
+                                placeholder="終了" required>
                         </div>
                     </td>
                     <td>
-                        <input type="number" name="max_people_1" value="" class="form-control text-center number-input" min="1" placeholder="人数" required>
+                        <input type="number" name="max_people_1" value="" 
+                            class="form-control text-center number-input" min="1" 
+                            placeholder="人数" required>
                     </td>
                     <td></td>
                 </tr>
@@ -162,23 +170,30 @@ document.getElementById('add-row-btn').addEventListener('click', function () {
     const row = document.createElement('tr');
     row.innerHTML = `
         <td>
-            <input type="text" name="pattern_name_${rowCount}" value="" class="form-control text-center" placeholder="パターン名" required>
+            <input type="text" name="pattern_name_${rowCount}" value="" 
+                class="form-control text-center pattern-input" 
+                placeholder="パターン名" required>
         </td>
         <td>
             <div class="d-flex justify-content-center align-items-center gap-2">
-                <input type="time" name="start_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="開始" required>
+                <input type="time" name="start_time_${rowCount}" value="" 
+                    class="form-control text-center time-input" required>
                 <span class="mx-1">～</span>
-                <input type="time" name="end_time_${rowCount}" value="" class="form-control text-center" style="width: 6rem;" placeholder="終了" required>
+                <input type="time" name="end_time_${rowCount}" value="" 
+                    class="form-control text-center time-input" required>
             </div>
         </td>
         <td>
-            <input type="number" name="max_people_${rowCount}" value="" class="form-control text-center" min="1" placeholder="人数" required>
+            <input type="number" name="max_people_${rowCount}" value="" 
+                class="form-control text-center number-input" 
+                min="1" placeholder="人数" required>
         </td>
         <td>
             <button type="button" class="btn btn-danger btn-sm" 
                 onclick="this.closest('tr').remove()">削除</button>
         </td>
     `;
+
     tbody.appendChild(row);
 
     document.getElementById('total-input').value = rowCount;
