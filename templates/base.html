@@ -18,6 +18,10 @@
       .custom-navbar {
             background-color: #e3f2fd !important;
       }
+
+       body {
+            padding-top: 56px; 
+    }
     </style>
 
         {% block extra_css %}{% endblock %}
@@ -25,7 +29,7 @@
     <body>
 
         {% if not hide_navbar %}
-        <nav class="navbar navbar-expand-lg custom-navbar px-3">
+        <nav class="navbar navbar-expand-lg custom-navbar px-3 fixed-top">
             <a class="navbar-brand fw-bold me-4" href="{% url 'shifts:home' %}" style="font-size: 1.5rem;">Shift Pilot</a>
 
             <div class="collapse navbar-collapse">
