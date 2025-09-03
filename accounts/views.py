@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.views import PasswordChangeView
+from .forms import CustomPasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 
 
@@ -171,6 +172,7 @@ def mypage(request):
         
 class CustomPasswordChangeView(PasswordChangeView):
     template_name = 'accounts/password_change.html'
+    form_class = CustomPasswordChangeForm
     
     def form_valid(self, form):
         user = form.save()

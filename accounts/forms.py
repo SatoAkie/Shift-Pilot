@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.contrib.auth.forms import PasswordChangeForm
 
 User = get_user_model()
 
@@ -62,3 +63,12 @@ class UserUpdateForm(forms.ModelForm):
             'email': 'メールアドレス',
         }
    
+class CustomPasswordChangeForm(PasswordChangeForm):
+    def clean_new_password1(self):
+        new_password1 = self.cleaned_data.get("new_password1")
+        old_password = self.cleaned_data.get("old_password")
+
+        if old_password and new_password1 and old_password == new_password1:
+            raise ValidationError("元のパスワードと同じパスワードにはできません。")
+
+        return new_password1
