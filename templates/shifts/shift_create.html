@@ -148,6 +148,7 @@ td.username-cell {
                           
                           {% if us.shift %}
                               {# 勤務 #}
+                              <option value="">休</option> 
                               {% for pattern in patterns %}
                                 <option value="{{ pattern.id }}" {% if us.shift.pattern.id == pattern.id %}selected{% endif %}>
                                   {{ pattern.pattern_name }}
@@ -156,6 +157,7 @@ td.username-cell {
 
                           {% elif us.is_error %}
                               {# 削除済み／割当不能 #}
+                              <option value="">休</option>
                               <option value="__ERROR__" selected></option>
                               {% for pattern in patterns %}
                                 <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
