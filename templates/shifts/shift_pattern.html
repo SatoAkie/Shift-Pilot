@@ -67,23 +67,27 @@
                     <td>
                         <input type="text" name="pattern_name_1" value="" 
                             class="form-control text-center pattern-input" 
-                            placeholder="パターン名" required>
+                            placeholder="パターン名" 
+                            required>
                     </td>
                     <td>
                         <div class="d-flex justify-content-center align-items-center gap-2">
                             <input type="time" name="start_time_1" value="" 
                                 class="form-control text-center time-input" style="width: 6rem;" 
-                                placeholder="開始" required>
+                                placeholder="開始" 
+                                required>
                             <span class="mx-1">～</span>
                             <input type="time" name="end_time_1" value="" 
                                 class="form-control text-center time-input" style="width: 6rem;" 
-                                placeholder="終了" required>
+                                placeholder="終了" 
+                                required>
                         </div>
                     </td>
                     <td>
                         <input type="number" name="max_people_1" value="" 
                             class="form-control text-center number-input" min="1" 
-                            placeholder="人数" required>
+                            placeholder="人数" 
+                            required>
                     </td>
                     <td></td>
                 </tr>
@@ -152,7 +156,17 @@
 
         <div class="text-center mb-5">
             <button type="submit" class="btn btn-primary px-5"
-                onclick="this.disabled=true; this.innerText='保存中...'; this.form.submit();">登録</button>
+                onclick="
+                if (this.form.checkValidity()) {
+                    this.disabled = true;
+                    this.innerText = '保存中...';
+                    this.form.submit();   // ← 明示的に送信
+                } else {
+                    this.form.reportValidity();
+                }
+                ">
+            登録
+            </button>
         </div>
     </form>
 </div>
