@@ -160,7 +160,7 @@
                 if (this.form.checkValidity()) {
                     this.disabled = true;
                     this.innerText = '保存中...';
-                    this.form.submit();   // ← 明示的に送信
+                    this.form.submit(); 
                 } else {
                     this.form.reportValidity();
                 }
