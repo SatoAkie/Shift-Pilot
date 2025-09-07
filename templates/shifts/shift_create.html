@@ -145,31 +145,20 @@ td.username-cell {
                         data-user-id="{{ user.id }}"
                         data-date="{{ day|date:'Y-m-d'}}"
                         data-shift-id="{{ us.shift.id|default:'' }}">
-                          
-                          {% if us.shift %}
-                              {# 勤務 #}
-                              <option value="">休</option> 
-                              {% for pattern in patterns %}
-                                <option value="{{ pattern.id }}" {% if us.shift.pattern.id == pattern.id %}selected{% endif %}>
-                                  {{ pattern.pattern_name }}
-                                </option>
-                              {% endfor %}
+                    
+                        {% if us.is_error %}
+                          <option value="__ERROR__" selected></option>
+                        {% endif %}
 
-                          {% elif us.is_error %}
-                              {# 削除済み／割当不能 #}
-                              <option value="">休</option>
-                              <option value="__ERROR__" selected></option>
-                              {% for pattern in patterns %}
-                                <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
-                              {% endfor %}
+                        <option value=""
+                                {% if not us.shift and not us.is_error %}selected{% endif %}>休</option>
 
-                          {% else %}
-                              {# 休み #}
-                              <option value="" selected>休</option>
-                              {% for pattern in patterns %}
-                                <option value="{{ pattern.id }}">{{ pattern.pattern_name }}</option>
-                              {% endfor %}
-                          {% endif %}
+                        {% for pattern in patterns %}
+                          <option value="{{ pattern.id }}"
+                            {% if us.shift and us.shift.pattern.id == pattern.id %}selected{% endif %}>
+                            {{ pattern.pattern_name }}
+                          </option>
+                        {% endfor %}
                       </select>
 
                     {% endwith %}
