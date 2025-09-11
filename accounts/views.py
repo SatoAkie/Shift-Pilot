@@ -102,7 +102,7 @@ def user_role_update_view(request,user_id):
         user.save()
 
         if user != request.user:
-            messages.success(request, f"{user.name} さんのロールを『{role.role_name}』に変更しました")
+            messages.success(request, f"{user.name} さんの権限を『{role.role_name}』に変更しました")
 
         if role.role_name == '一般' and user == request.user:
             messages.info(request, "権限が変更されたため、ホーム画面に戻りました")
