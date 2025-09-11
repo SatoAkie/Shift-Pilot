@@ -82,7 +82,7 @@
                     <td class="shift-td">
                         {% with pid=shift_dict|get_item:user.id|get_item:day.day %}
                              {% if pid == "deleted" %}
-                                <span class="shift-label text-muted">削除済みパターン</span>
+                                <span class="shift-label text-warning fst-italic">削</span>
                             {% elif pid %}
                                 {% for pattern in patterns %}
                                     {% if pattern.id == pid %}
@@ -121,7 +121,7 @@
             <ul class="list-unstyled mb-1 fw-bold">
                 <li>休：休み</li>
                 <li>未：未設定（シフト未作成）</li>
-                <li>削除済みパターン：すでに削除されたシフトパターンが設定</li>
+                <li>削：すでに削除されたシフトパターンが設定</li>
             </ul>
         </div>
     </div>
