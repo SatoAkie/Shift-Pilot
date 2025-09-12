@@ -99,7 +99,8 @@ td.username-cell {
 
       <div class="table-responsive">
         <p class="text-dark small mb-2" style="font-size: 0.95rem;">
-          各日のチェックボックスにチェックを入れると、その日の全員のシフトが「休」になります。
+          各日のチェックボックスにチェックを入れると、その日の全員のシフトが「休」になります。<br>
+          <i class="fa-solid fa-comment text-danger"></i>をクリックするとコメントを確認できます。
         </p>
         <table class="table table-bordered text-center align-middle">
           <thead class="table-light">
@@ -124,7 +125,7 @@ td.username-cell {
                     {% with us=shift_dict|get_item:user.id|get_item:day %}
                       {% with comment=comment_dict|get_item:user.id|get_item:day.day %}
                         {% if comment %}
-                          <span class="text-danger"
+                          <i class="fa-solid fa-comment text-danger"
                                 role="button"
                                 tabindex="0"
                                 data-bs-toggle="popover"
@@ -132,8 +133,7 @@ td.username-cell {
                                 data-bs-placement="top"
                                 data-bs-title="コメント"
                                 data-bs-content="{{ comment }}">
-                            💬
-                          </span><br>
+                          </i><br>
                         {% endif %}
                       {% endwith %}
 
