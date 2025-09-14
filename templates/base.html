@@ -17,8 +17,19 @@
           text-decoration: underline;
       }
 
-      .custom-navbar {
-            background-color: #e3f2fd !important;
+      .employee-navbar {
+      background-color: #e3f2fd !important;
+      }
+
+      .admin-navbar {
+        background-color: #2196f3 !important;
+      }
+      .admin-navbar .nav-link,
+      .admin-navbar .navbar-brand{
+        color: #fff !important;
+      }
+      .admin-navbar .dropdown-menu .dropdown-item {
+         color: #000 !important; 
       }
 
        body {
@@ -31,7 +42,13 @@
     <body>
 
         {% if not hide_navbar %}
-        <nav class="navbar navbar-expand-lg custom-navbar px-3 fixed-top">
+        <nav class="navbar navbar-expand-lg 
+            {% if request.resolver_match.url_name in 'shift_pattern delete_pattern pattern_assignment_summaries shift_create shifts update_user_shift toggle_all_rest user_manage user_delete role_update user_invite' %}
+                admin-navbar
+            {% else %}
+                employee-navbar
+            {% endif %}
+            px-3 fixed-top">
             <a class="navbar-brand fw-bold me-4" href="{% url 'shifts:home' %}" style="font-size: 1.5rem;">Shift Pilot</a>
 
             <div class="collapse navbar-collapse">
