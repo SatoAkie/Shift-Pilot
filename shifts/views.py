@@ -91,6 +91,8 @@ def shift_request_view(request):
     comment_dates = set(existing_requests.exclude(comment="").exclude(comment__isnull=True).values_list('date', flat=True))
     existing_dates = set(existing_requests.values_list('date', flat=True))
 
+    comment_dict = {req.date: req.comment for req in existing_requests if req.comment}
+    
     current_month = date(year, month, 1)
     prev_month = (current_month.replace(day=1) - timedelta(days=1)).replace(day=1)
     next_month = (current_month.replace(day=28) + timedelta(days=4)).replace(day=1)
@@ -144,6 +146,7 @@ def shift_request_view(request):
             'next_month_str' : next_month_str,
             'day_off_dates': day_off_dates,
             'comment_dates': comment_dates,
+            'comment_dict': comment_dict, 
         
         }
     )

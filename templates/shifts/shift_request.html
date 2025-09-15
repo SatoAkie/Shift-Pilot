@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load extras%}
 {% block content %}
 <style>
 .calendar-cell {
@@ -86,7 +86,15 @@ table.table {
 
                                     <span id="mark-{{ day }}" class="fs-4 calendar-mark">
                                     {% if day in comment_dates %}
-                                        <i class="fa-solid fa-comment text-danger"></i>
+                                        <i class="fa-solid fa-comment text-danger"
+                                            role="button"
+                                            tabindex="0"
+                                            data-bs-toggle="popover"
+                                            data-bs-trigger="hover focus"
+                                            data-bs-placement="top"
+                                            data-bs-title="コメント"
+                                            data-bs-content="{{ comment_dict|get_item:day }}">
+                                        </i>
                                     {% endif %}
                                     {% if day in day_off_dates %}休{% endif %}
                                     </span>
@@ -148,8 +156,6 @@ table.table {
     }
 }
 
-
-
     function openCommentModal(day){
         currentTargetDay = day;
         const hidden = document.getElementById("comment-hidden-"+day);
@@ -165,14 +171,28 @@ table.table {
 
     const markSpan = document.getElementById("mark-" + currentTargetDay);
     if (text.trim()) {
-            markSpan.innerHTML = '<i class="fa-solid fa-comment text-danger"></i>' + markSpan.innerHTML;
+            markSpan.innerHTML = `<i class="fa-solid fa-comment text-danger"
+                              role="button"
+                              tabindex="0"
+                              data-bs-toggle="popover"
+                              data-bs-trigger="hover focus"
+                              data-bs-placement="top"
+                              data-bs-title="コメント"
+                              data-bs-content="${text}"></i>` + markSpan.innerHTML.replace(/<i.*<\/i>/, '');
+            new bootstrap.Popover(markSpan.querySelector('[data-bs-toggle="popover"]'));
     } else {
-        markSpan.innerHTML = markSpan.innerHTML.replace(/<i class="fa-solid fa-comment text-danger"><\/i>/g, '');
+        markSpan.innerHTML = markSpan.innerHTML.replace(/<i class="fa-solid fa-comment text-danger".*<\/i>/, '');
     }
 
     const modal = bootstrap.Modal.getInstance(document.getElementById("commentModal"));
     modal.hide();
 }
-
+    
+document.addEventListener("DOMContentLoaded", function () {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    popoverTriggerList.forEach(function (el) {
+        new bootstrap.Popover(el);
+    });
+});
 </script>
 {% endblock %}
