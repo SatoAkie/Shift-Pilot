@@ -17,9 +17,13 @@
     <h5 class="text-center text-secondary ms-1 mb-4">新規アカウント登録</h5>
     <div class="d-flex justify-content-center">
         <div style="width: 100%; max-width: 500px; padding: 30px; border-radius: 10px;">
+
             {% if messages %}
               {% for message in messages %}
-                <div class="alert alert-danger">{{ message }}</div>
+                <div class="alert alert-danger alert-dismissible fade show text-center" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
+                </div>
               {% endfor %}
             {% endif %}
 
