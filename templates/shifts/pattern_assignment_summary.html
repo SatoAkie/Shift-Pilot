@@ -28,8 +28,9 @@
 
 {% if messages %}
   {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} text-center mt-3" role="alert">
+    <div class="alert alert-danger alert-dismissible fade show text-center text-center mt-3" role="alert">
       {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="閉じる"></button>
     </div>
   {% endfor %}
 {% endif %}
