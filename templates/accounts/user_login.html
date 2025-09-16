@@ -31,7 +31,7 @@
                 {{ login_form.non_field_errors }}
 
                 <div class="mb-3 row">
-                    <label for="id_email" class="col-sm-4 col-form-label text-end">メールアドレス：</label>
+                    <label for="id_email" class="col-sm-4 col-form-label text-end">メールアドレス</label>
                     <div class="col-sm-8">
                         {{ login_form.email|add_class:"form-control" }}
                         {% if login_form.email.errors %}
@@ -41,7 +41,7 @@
                 </div>
 
                 <div class="mb-3 row">
-                    <label for="id_password" class="col-sm-4 col-form-label text-end">パスワード：</label>
+                    <label for="id_password" class="col-sm-4 col-form-label text-end">パスワード</label>
                     <div class="col-sm-8">
                         {{ login_form.password|add_class:"form-control" }}
                         {% if login_form.password.errors %}

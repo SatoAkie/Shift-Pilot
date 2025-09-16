@@ -33,7 +33,7 @@
                 
 
                 <div class="mb-3 row">
-                    <label for="id_name" class="col-sm-4 col-form-label text-end">名前：</label>
+                    <label for="id_name" class="col-sm-4 col-form-label text-start">名前</label>
                     <div class="col-sm-8">
                         {{ signup_form.name|add_class:"form-control" }}
                         {% if signup_form.name.errors %}
@@ -43,7 +43,7 @@
                 </div>
 
                 <div class="mb-3 row">
-                    <label for="id_email" class="col-sm-4 col-form-label text-end">メールアドレス：</label>
+                    <label for="id_email" class="col-sm-4 col-form-label text-start">メールアドレス</label>
                     <div class="col-sm-8">
                         {{ signup_form.email|add_class:"form-control" }}
                         {% if signup_form.email.errors %}
@@ -53,7 +53,7 @@
                 </div>
 
                 <div class="mb-3 row">
-                    <label for="id_password" class="col-sm-4 col-form-label text-end">パスワード：</label>
+                    <label for="id_password" class="col-sm-4 col-form-label text-start">パスワード</label>
                     <div class="col-sm-8">
                         {{ signup_form.password|add_class:"form-control" }}
                         {% if signup_form.password.errors %}
@@ -63,7 +63,7 @@
                 </div>
 
                 <div class="mb-3 row">
-                    <label for="id_confirm_password" class="col-sm-4 col-form-label text-end">パスワード再入力：</label>
+                    <label for="id_confirm_password" class="col-sm-4 col-form-label text-start">パスワード再入力</label>
                     <div class="col-sm-8">
                         {{ signup_form.confirm_password|add_class:"form-control" }}
                         {% if signup_form.confirm_password.errors %}
