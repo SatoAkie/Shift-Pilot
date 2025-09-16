@@ -132,7 +132,7 @@ select.form-select.border-danger {
                                 role="button"
                                 tabindex="0"
                                 data-bs-toggle="popover"
-                                data-bs-trigger="focus"
+                                data-bs-trigger="hover"
                                 data-bs-placement="top"
                                 data-bs-title="コメント"
                                 data-bs-content="{{ comment }}">
@@ -302,9 +302,25 @@ select.form-select.border-danger {
     });
   });
 
+  const popovers = [];
   const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
   popoverTriggerList.forEach(function (el) {
-    new bootstrap.Popover(el);
+    const popover = new bootstrap.Popover(el, {
+      trigger: 'hover',
+      placement: 'top',
+      container: 'body',
+      html: true
+    });
+    popovers.push(popover);
+  });
+
+  window.addEventListener('scroll', function() {
+    popovers.forEach(function (popover) {
+      popover.hide();
+    });
+    document.querySelectorAll('.popover').forEach(function(el) {
+      el.remove();
+    });
   });
 
   document.getElementById('auto-assign-form').addEventListener('submit', function (e) {
