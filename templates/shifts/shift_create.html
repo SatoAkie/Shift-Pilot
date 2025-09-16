@@ -46,6 +46,24 @@ td.username-cell {
     height: 70px;
     white-space: nowrap;
     display: table-cell;
+    position: sticky;
+    left: 0;
+    background-color: #fff;
+    z-index: 3; 
+}
+th.username-header {
+  position: sticky;
+  left: 0;
+  top: 0;
+  background-color: #f8f9fa;
+  z-index: 4; 
+}
+.shift-description {
+  position: sticky;
+  top: 0; 
+  background-color: #fff;
+  z-index: 5;
+  padding: 4px 0;
 }
 .table td {
   padding-left: 1.5rem;
@@ -100,15 +118,16 @@ select.form-select.border-danger {
         <a href="?month={{ next_month_str }}" class="btn btn-sm btn-outline-secondary ms-3">&raquo;</a>
       </div>
 
-      <div class="table-responsive">
-        <p class="text-dark small mb-2" style="font-size: 0.95rem;">
+      <p class="text-dark small mb-2 shift-description" style="font-size: 0.95rem;">
           各日のチェックボックスにチェックを入れると、その日の全員のシフトが「休」になります。<br>
-          <i class="fa-solid fa-comment text-danger"></i>をクリックするとコメントを確認できます。
-        </p>
+          <i class="fa-solid fa-comment text-danger"></i>にカーソルを合わせるとコメントを確認できます。
+      </p>
+
+      <div class="table-responsive">
         <table class="table table-bordered text-center align-middle">
           <thead class="table-light">
           <tr>
-            <th></th>
+            <th class="username-header"></th>
             {% for day in calendar_days %}
               <th>
                 {{ day.day }}<br>

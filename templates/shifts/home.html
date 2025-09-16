@@ -30,7 +30,13 @@
   table-layout: auto !important;
   width: 100%;
 }
-
+th.username-header {
+  position: sticky;
+  left: 0;
+  top: 0;
+  background-color: #f8f9fa;
+  z-index: 4; 
+}
 .table.shift-table td.user-name,
 .table.shift-table th.user-name {
   writing-mode: horizontal-tb !important; 
@@ -39,6 +45,10 @@
   vertical-align: middle;              
   padding: 4px 8px;
   min-width: 140px; 
+  position: sticky;
+  left: 0;
+  background-color: #fff;
+  z-index: 3;
 }
 .shift-label.text-muted {
     font-style: italic;
@@ -68,7 +78,7 @@
         <table class="table table-bordered text-center align-middle shift-table">
             <thead class="table-light">
                 <tr>
-                    <th></th>
+                    <th class="username-header"></th>
                     {% for day in calendar_days %}
                         <th>{{ day.day }}</th>
                     {% endfor %}
