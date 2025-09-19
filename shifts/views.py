@@ -156,7 +156,7 @@ def shift_pattern_view(request):
     if request.method == 'POST':
         total = int(request.POST.get('total', 0))
         pattern_list = []
-        error_message = None
+        error_dict = {}
 
         for i in range(1, total + 1):
             pattern_id = request.POST.get(f'id_{i}', '').strip()
@@ -165,25 +165,36 @@ def shift_pattern_view(request):
             end = request.POST.get(f'end_time_{i}', '').strip()
             max_people_raw = request.POST.get(f'max_people_{i}', '').strip()
         
+            if not (name and start and end and max_people_raw):
+                continue
+
+            start_time = datetime.strptime(start, "%H:%M").time()
+            end_time = datetime.strptime(end, "%H:%M").time()
+            max_people = int(max_people_raw)
+
+            
+            total_minutes = (datetime.combine(date.today(),end_time) - datetime.combine(date.today(),start_time)).seconds //60
+            work_hours = (total_minutes - 60) / 60
+
+            if work_hours > 12:
+                error_dict[i] = "労働時間は12時間を超えないようにしてください"
+
             pattern_data = {
                 'id': pattern_id,
                 'pattern_name': name,
-                'start_time': start,
-                'end_time': end,
-                'max_people': max_people_raw,
+                'start_time': start_time,
+                'end_time': end_time,
+                'max_people': max_people,
             }
-
-            if not (name and start and end and max_people_raw):
-                continue
-            #     error_message = 'すべての項目を入力してください'
-            # else:
-            #     try:
-            #         pattern_data['max_people'] = int(max_people_raw)
-            #     except ValueError:
-            #             error_message = '人数は整数で入力してください'
-            
             pattern_list.append(pattern_data)
 
+        if error_dict:
+            patterns = ShiftPattern.objects.filter(team=request.user.team)
+            return render(request, 'shifts/shift_pattern.html', {
+                'patterns': pattern_list,
+                'error_dict': error_dict,
+            })
+        
         for data in pattern_list:
             if data['id']:
                 pattern = get_object_or_404(ShiftPattern, pk=data['id'], team=request.user.team)

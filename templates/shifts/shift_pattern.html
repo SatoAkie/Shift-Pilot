@@ -27,6 +27,18 @@
   text-align: center !important;
   vertical-align: middle !important;
 }
+.form-control.is-invalid {
+  border: 2px solid #dc3545 !important;
+  background-image: none !important;
+  padding-right: .75rem !important;
+}
+.invalid-feedback {
+  display: block;
+  height: 1.2em;
+  margin-top: 2px;
+  font-size: 0.85rem;
+  text-align: center;
+}
 </style>
 
 
@@ -52,7 +64,7 @@
 
     <form method="POST">
         {% csrf_token %}
-        <table class="table table-borderless text-center align-middle mb-4" id="pattern-table" style="width: 100%; max-width: 700px; margin: 0 auto;">
+        <table class="table table-borderless text-center mb-4" id="pattern-table" style="width: 100%; max-width: 700px; margin: 0 auto;">
             <thead>
                 <tr>
                     <th>パターン名</th>
@@ -109,17 +121,23 @@
                             <input type="time"
                                    name="start_time_{{ forloop.counter }}"
                                    value="{{ pattern.start_time|time:'H:i' }}"
-                                   class="form-control text-center time-input"
+                                   class="form-control text-center time-input {% if error_dict|get_item:forloop.counter %}is-invalid{% endif %}"
                                    style="width: 6rem;"
                                    required>
                             <span class="mx-1">～</span>
                             <input type="time"
                                    name="end_time_{{ forloop.counter }}"
                                    value="{{ pattern.end_time|time:'H:i' }}"
-                                   class="form-control text-center time-input"
+                                   class="form-control text-center time-input {% if error_dict|get_item:forloop.counter %}is-invalid{% endif %}"
                                    style="width: 6rem;"
                                    required>
                         </div>
+
+                        {% if error_dict|get_item:forloop.counter %}
+                            <div class="invalid-feedback">
+                                {{ error_dict|get_item:forloop.counter }}
+                            </div>
+                        {% endif %}
                     </td>
                     <td>
                         <input type="number"
@@ -134,11 +152,21 @@
                                value="{{ pattern.id }}">
                     </td>
                     <td>
-
-                        <button type="button" class="btn btn-danger btn-sm" formaction="{% url 'shifts:delete_pattern' pattern.id %}" formmethod="post"
-                            onclick="return confirm('本当に削除しますか？');">削除</button>
-                        {% csrf_token %}
+                        {% if pattern.id %}
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm"
+                                    onclick="deletePattern({{ pattern.id }})">
+                                削除
+                            </button>
+                        {% else %}
+                            <button type="button"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="this.closest('tr').remove()">
+                                削除
+                            </button>
+                        {% endif %}
                     </td>
+
                 </tr>
                 {% endfor %}
             </tbody>
@@ -168,6 +196,9 @@
             登録
             </button>
         </div>
+    </form>
+    <form id="delete-form" method="post" style="display:none;">
+        {% csrf_token %}
     </form>
 </div>
 
@@ -220,5 +251,12 @@ window.addEventListener('DOMContentLoaded', function () {
         active.blur();
     }
 });
+function deletePattern(patternId) {
+    if (!confirm("本当に削除しますか？")) return;
+
+    const form = document.getElementById("delete-form");
+    form.action = `{% url 'shifts:delete_pattern' 0 %}`.replace("0", patternId);
+    form.submit();
+}
 </script>
 {% endblock %}
