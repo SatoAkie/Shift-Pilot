@@ -8,9 +8,8 @@
   padding: 4px 6px;
   max-width: 130px;
 
-  height: 70px !important;        
+  height: 75px !important;        
   max-height: 70px !important;   
-  overflow: hidden !important;    
   vertical-align: middle !important;
   white-space: nowrap !important;
 }
@@ -18,9 +17,8 @@
 .table.shift-table td.shift-td .shift-label {
   display: inline-block !important;  
   max-width: 120px;        
-  overflow: hidden !important;
   text-overflow: ellipsis !important; 
-  line-height: 70px !important;     
+  line-height: normal !important;     
   white-space: nowrap !important;
   margin: 0 auto !important; 
   text-align: center !important;
@@ -54,6 +52,9 @@ th.username-header {
     font-style: italic;
     border-radius: 4px;
     padding: 2px 4px;
+}
+.shift-label.text-orange {
+    color: #ff6600 !important;
 }
 </style>
 
@@ -92,7 +93,7 @@ th.username-header {
                     <td class="shift-td">
                         {% with pid=shift_dict|get_item:user.id|get_item:day.day %}
                              {% if pid == "deleted" %}
-                                <span class="shift-label text-warning fst-italic">削</span>
+                                <span class="shift-label text-orange fst-italic">削</span>
                             {% elif pid %}
                                 {% for pattern in patterns %}
                                     {% if pattern.id == pid %}
