@@ -40,7 +40,6 @@
       <thead class="table-light">
         <tr>
           <th>ユーザー名</th>
-          <th>合計労働時間</th>
           <th>休暇</th>
           {% for pattern in patterns %}
             <th>{{ pattern.pattern_name }}</th>
@@ -51,7 +50,6 @@
         {% for user in users %}
           <tr>
             <td>{{ user.name }}</td>
-            <td>{{ total_work_hours|get_item:user.id|floatformat:1 }} h</td>
             <td>{{ combined_rest_counts|get_item:user.id|default:"0" }} 回</td>
               {% for pattern in patterns %}
                 {% with count=summary_dict|get_item:user.id|get_item:pattern.id %}
