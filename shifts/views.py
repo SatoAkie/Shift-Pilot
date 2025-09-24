@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.contrib import messages
 from django.utils.dateparse import parse_date
 
+
 @login_required
 def home(request):
     today = date.today()
@@ -271,13 +272,13 @@ def pattern_assignment_summary_view(request):
             if count == max_value:
                 max_counts[user_id][pattern_id] = True
 
-    total_work_hours = defaultdict(float)
-    for summary in summaries:
-        if summary.pattern and summary.user:
-            start = datetime.combine(date.today(), summary.pattern.start_time)
-            end = datetime.combine(date.today(), summary.pattern.end_time)
-            hours = (end - start).seconds / 3600 
-            total_work_hours[summary.user_id] += hours * summary.assignment_count   
+    # total_work_hours = defaultdict(float)
+    # for summary in summaries:
+    #     if summary.pattern and summary.user:
+    #         start = datetime.combine(date.today(), summary.pattern.start_time)
+    #         end = datetime.combine(date.today(), summary.pattern.end_time)
+    #         hours = (end - start).seconds / 3600 
+    #         total_work_hours[summary.user_id] += hours * summary.assignment_count   
 
     if month == 12:
         last_day = date(year, 12, 31)
@@ -325,7 +326,7 @@ def pattern_assignment_summary_view(request):
         'patterns': patterns,
         'summary_dict': summary_dict,
         'max_counts': max_counts,
-        'total_work_hours': total_work_hours,
+        # 'total_work_hours': total_work_hours,
         'combined_rest_counts': combined_rest_counts, 
         'prev_month_str': prev_month_str,
         'next_month_str': next_month_str,
@@ -386,6 +387,21 @@ def shift_create_view(request):
     for req in comment_requests:
         comment_dict[req.user.id][req.date.day] = req.comment
     
+    rest_type_dict = defaultdict(dict)
+
+    # 1. まず全日を 'auto' で初期化
+    for user in users:
+        for day in calendar_days:
+            rest_type_dict[user.id][day.day] = 'auto'
+
+    # 2. 希望休だけ 'request' に上書き
+    requested_rests = ShiftRequest.objects.filter(
+        user__in=users,
+        date__range=(first_day, last_day),
+        is_day_off=True
+    )
+    for req in requested_rests:
+        rest_type_dict[req.user.id][req.date.day] = 'request'
     shifts = UserShift.objects.filter(shift__team=request.user.team,date__range=(first_day, last_day))
 
     error_flag = False
@@ -404,6 +420,7 @@ def shift_create_view(request):
         'shift_dict': shift_dict,
         'error_dict': error_dict, 
         'comment_dict': comment_dict,
+        'rest_type_dict': rest_type_dict,
         'patterns': ShiftPattern.objects.filter(team=request.user.team),
         'prev_month_str': prev_month_str,
         'next_month_str': next_month_str,

@@ -72,6 +72,20 @@ th.username-header {
 select.form-select.border-danger {
     border-width: 2px !important;
 }
+.form-select.rest-blue { 
+  color: #0d6efd !important; 
+  font-weight: 600; 
+}
+.form-select.rest-gray {
+  color: #6c757d !important;
+}
+option.rest-request {
+  color: #0d6efd;
+  font-weight: 600;
+}
+option.rest-auto {
+  color: #6c757d;
+}
 </style>
 {% endblock %}
 
@@ -120,6 +134,7 @@ select.form-select.border-danger {
 
       <p class="text-dark small mb-2 shift-description" style="font-size: 0.95rem;">
           各日のチェックボックスにチェックを入れると、その日の全員のシフトが「休」になります。<br>
+          希望休は「<span class="text-primary fw-bold">休</span>」と表示されます。<br>
           <i class="fa-solid fa-comment text-danger"></i>にカーソルを合わせるとコメントを確認できます。
       </p>
 
@@ -159,30 +174,39 @@ select.form-select.border-danger {
                         {% endif %}
                       {% endwith %}
 
-                      <select 
-                        class="form-select form-select-sm
-                          {% if us.shift is None and us.is_error %} border-danger
+                      {% with rest_type=rest_type_dict|get_item:user.id|get_item:day.day %}
+                        <select 
+                          class="form-select form-select-sm
+                            {% if us.shift is None and us.is_error %} border-danger{% endif %}
+                            {% if error_dict|get_item:user.id|get_item:day.day %} border-danger{% endif %}
+                            {% if not us.shift and not us.is_error %}
+                              {% if rest_type == 'request' %} rest-blue
+                              {% else %} rest-gray
+                              {% endif %}
+                            {% endif %}"
+                          data-user-id="{{ user.id }}"
+                          data-date="{{ day|date:'Y-m-d'}}"
+                          data-shift-id="{{ us.shift.id|default:'' }}"
+                          data-rest-type="{{ rest_type|default:'' }}"> 
+                      
+                          {% if us.is_error %}
+                            <option value="__ERROR__" selected></option>
                           {% endif %}
-                          {% if error_dict|get_item:user.id|get_item:day.day %} border-danger{% endif %}"
-                        data-user-id="{{ user.id }}"
-                        data-date="{{ day|date:'Y-m-d'}}"
-                        data-shift-id="{{ us.shift.id|default:'' }}">
-                    
-                        {% if us.is_error %}
-                          <option value="__ERROR__" selected></option>
-                        {% endif %}
 
-                        <option value=""
-                                {% if not us.shift and not us.is_error %}selected{% endif %}>休</option>
-
-                        {% for pattern in patterns %}
-                          <option value="{{ pattern.id }}"
-                            {% if us.shift and us.shift.pattern.id == pattern.id %}selected{% endif %}>
-                            {{ pattern.pattern_name }}
+                          <option value=""
+                            class="{% if rest_type_dict|get_item:user.id|get_item:day.day == 'request' %}rest-request{% else %}rest-auto{% endif %}"
+                            {% if not us.shift and not us.is_error %}selected{% endif %}>
+                            休
                           </option>
-                        {% endfor %}
-                      </select>
 
+                          {% for pattern in patterns %}
+                            <option value="{{ pattern.id }}"
+                              {% if us.shift and us.shift.pattern.id == pattern.id %}selected{% endif %}>
+                              {{ pattern.pattern_name }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      {% endwith %}
                     {% endwith %}
                   </td>
                 {% endfor %}
@@ -220,8 +244,23 @@ select.form-select.border-danger {
   document.addEventListener('DOMContentLoaded', function () {
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+  function applyRestColor(sel) {
+    sel.classList.remove('rest-blue', 'rest-gray');
+    if (sel.value === '') {
+      const t = sel.dataset.restType; // 'request' or 'auto' or ''
+      if (t === 'request') {
+        sel.classList.add('rest-blue');
+      } else {
+        sel.classList.add('rest-gray');
+      }
+    }
+  }
+
   const selects = document.querySelectorAll('select[data-user-id][data-date]');
   selects.forEach(select => {
+
+    applyRestColor(select);
+
     select.addEventListener('change', function () {
       const userId = this.dataset.userId;
       const date = this.dataset.date;
@@ -237,6 +276,17 @@ select.form-select.border-danger {
       } else {
         this.classList.remove('border-danger'); 
       }
+
+
+      if (patternId === '') {
+        if (!this.dataset.restType) {
+          this.dataset.restType = 'auto';
+        }
+      } else {
+        this.classList.remove('rest-blue', 'rest-gray');
+      }
+      applyRestColor(this);
+
       fetch("{% url 'shifts:update_user_shift' %}", {
         method: 'POST',
         headers: {
@@ -293,10 +343,10 @@ select.form-select.border-danger {
               } else if (errorOption) {
                 errorOption.selected = true;
               }
+              sel.classList.remove("border-danger");
 
-              if (!sel.classList.contains("border-danger")) {
-                sel.classList.remove("border-danger");
-              }
+              sel.dataset.restType = 'auto';
+              applyRestColor(sel);
 
             } else {
               const errorOption = Array.from(sel.options).find(
@@ -307,6 +357,9 @@ select.form-select.border-danger {
               } else {
                 sel.selectedIndex = -1;
               }
+                 sel.classList.remove('rest-blue', 'rest-gray');
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              return;
             }
             sel.dispatchEvent(new Event('change', { bubbles: true }));
           });
